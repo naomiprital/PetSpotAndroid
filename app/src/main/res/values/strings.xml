@@ -1,3 +1,40 @@
 <resources>
-    <string name="app_name">PetSpotAndroid</string>
+    <string name="app_name">PetSpot</string>
+    <string name="app_logo">App Logo</string>
+    <string name="search_location_or_description">Search location or description…</string>
+    <string name="add_post">Add Post</string>
+
+    <string name="lost">LOST</string>
+    <string name="found">FOUND</string>
+
+    <string name="post_location_icon">post location</string>
+    <string name="comments_icon">comments</string>
+    <string name="post_user_avatar">post user avatar</string>
+    <string name="post_image">post image</string>
+
+    <string name="filter_all_types">All Types</string>
+    <string name="filter_lost_type">Lost</string>
+    <string name="filter_found_type">Found</string>
+
+    <string name="filter_newest_first">Newest First</string>
+    <string name="filter_oldest_first">Oldest First</string>
+    <string-array name="filter_types_array">
+        <item>All Types</item>
+        <item>Lost</item>
+        <item>Found</item>
+    </string-array>
+
+    <string-array name="filter_sort_array">
+        <item>Newest First</item>
+        <item>Oldest First</item>
+    </string-array>
+    <string-array name="filter_animals_array">
+        <item>All Animals</item>
+        <item>Dog</item>
+        <item>Cat</item>
+        <item>Bird</item>
+        <item>Rabbit</item>
+        <item>Hamster</item>
+        <item>Horse</item>
+    </string-array>
 </resources>

@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <color name="petspot_orange">#f97316</color>
+    <color name="black">#ff000000</color>
+    <color name="white">#ffffffff</color>
+    <color name="filters_background">#f5f6f8</color>
+    <color name="app_background">#e6eaf0</color>
+    <color name="gray_text">#a0aab2</color>
+    <color name="selected">#3b7eeb</color>
+    <color name="status_lost">#f44336</color>
+    <color name="status_found">#4caf50</color>
 </resources>
