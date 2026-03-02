@@ -18,6 +18,7 @@
 
     <string name="filter_newest_first">Newest First</string>
     <string name="filter_oldest_first">Oldest First</string>
+    <string name="no_pets_found_matching_your_filters">No pets found matching your filters</string>
     <string-array name="filter_types_array">
         <item>All Types</item>
         <item>Lost</item>

@@ -11,6 +11,7 @@ import android.widget.ArrayAdapter
 import android.widget.CheckedTextView
 import android.widget.EditText
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.widget.ListPopupWindow
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -44,13 +45,26 @@ class PostsListFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         val recyclerView = view.findViewById<RecyclerView>(R.id.posts_recycler_view)
-        adapter = PostsAdapter(emptyList())
+        val emptyStateText = view.findViewById<TextView>(R.id.empty_state_text)
+
+        adapter = PostsAdapter(emptyList()) { post ->
+            // TODO: open post information pop-up
+            Toast.makeText(context, "Post by ${post.lastSeenLocation}", Toast.LENGTH_SHORT).show()
+        }
+
         recyclerView.adapter = adapter
         recyclerView.layoutManager = LinearLayoutManager(context)
 
         viewModel = ViewModelProvider(requireActivity())[PostsViewModel::class.java]
+
         viewModel.filteredPosts.observe(viewLifecycleOwner) { posts ->
             adapter.setPosts(posts)
+
+            if (posts.isEmpty()) {
+                emptyStateText.visibility = View.VISIBLE
+            } else {
+                emptyStateText.visibility = View.GONE
+            }
         }
 
         setupFilterUI(view)

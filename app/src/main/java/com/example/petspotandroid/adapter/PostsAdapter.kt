@@ -15,8 +15,10 @@ import java.util.Date
 import java.util.Locale
 import androidx.core.content.ContextCompat
 
-class PostsAdapter(private var posts: List<Post>) :
-    RecyclerView.Adapter<PostsAdapter.PostViewHolder>() {
+class PostsAdapter(
+    private var posts: List<Post>,
+    private val onPostClicked: (Post) -> Unit
+) : RecyclerView.Adapter<PostsAdapter.PostViewHolder>() {
 
     @SuppressLint("NotifyDataSetChanged")
     fun setPosts(newPosts: List<Post>) {
@@ -33,6 +35,10 @@ class PostsAdapter(private var posts: List<Post>) :
     override fun onBindViewHolder(holder: PostViewHolder, position: Int) {
         val post = posts[position]
         holder.bind(post)
+
+        holder.itemView.setOnClickListener {
+            onPostClicked(post)
+        }
     }
 
     override fun getItemCount(): Int = posts.size
@@ -54,13 +60,12 @@ class PostsAdapter(private var posts: List<Post>) :
             dateView.text = dateFormat.format(Date(post.timestamp))
 
             if (post.isLost) {
-                statusView.text =  ContextCompat.getString(itemView.context, R.string.lost)
+                statusView.text = ContextCompat.getString(itemView.context, R.string.lost)
                 statusView.setBackgroundResource(R.drawable.bg_badge)
                 val redColor = ContextCompat.getColor(itemView.context, R.color.status_lost)
                 statusView.background.mutate().setTint(redColor)
-
             } else {
-                statusView.text =  ContextCompat.getString(itemView.context, R.string.found)
+                statusView.text = ContextCompat.getString(itemView.context, R.string.found)
                 statusView.setBackgroundResource(R.drawable.bg_badge)
                 val greenColor = ContextCompat.getColor(itemView.context, R.color.status_found)
                 statusView.background.mutate().setTint(greenColor)
