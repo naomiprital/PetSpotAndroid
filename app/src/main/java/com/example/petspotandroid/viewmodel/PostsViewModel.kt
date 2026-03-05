@@ -4,7 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.example.petspotandroid.models.Post
-import java.util.UUID
+import com.example.petspotandroid.repository.PostRepository
 
 enum class FilterType {
     ALL,
@@ -18,6 +18,9 @@ enum class SortOrder {
 }
 
 class PostsViewModel : ViewModel() {
+
+    private val repository = PostRepository()
+
     private val _allPosts = MutableLiveData<List<Post>>(emptyList())
     private val _filteredPosts = MutableLiveData<List<Post>>(emptyList())
     val filteredPosts: LiveData<List<Post>> get() = _filteredPosts
@@ -28,64 +31,14 @@ class PostsViewModel : ViewModel() {
     private var currentSearchQuery = ""
 
     init {
-        loadMockData()
-    }
-
-    private fun loadMockData() {
-        val now = System.currentTimeMillis()
-
-        val post1 = Post(
-            id = UUID.randomUUID().toString(),
-            ownerId = "user1",
-            userName = "Dana Cohen",
-            text = "Lost my golden retriever near the park!",
-            isLost = true,
-            petType = "Dog",
-            lastSeenLocation = "Hayarkon Park, Tel Aviv",
-            imageUrl = "https://images.dog.ceo/breeds/retriever-golden/n02099601_100.jpg",
-            timestamp = now - 3600000 // 1 hour ago (Added back for sorting!)
-        )
-        val post2 = Post(
-            id = UUID.randomUUID().toString(),
-            ownerId = "user2",
-            userName = "Yossi Levi",
-            text = "Found this sweet orange tabby wandering around.",
-            isLost = false,
-            petType = "Cat",
-            lastSeenLocation = "Dizengoff Center",
-            imageUrl = "https://cdn2.thecatapi.com/images/0XYvRd7oD.jpg",
-            timestamp = now - 7200000
-        )
-        val post3 = Post(
-            id = UUID.randomUUID().toString(),
-            ownerId = "user3",
-            userName = "Maya Golan",
-            text = "My parrot flew out the window. Answers to 'Paco'.",
-            isLost = true,
-            petType = "Bird",
-            lastSeenLocation = "Ramat Gan",
-            imageUrl = "https://www.birdland.co.uk/wp-content/uploads/2013/03/Blue-Gold-Macaw-2.jpg",
-            timestamp = now - 86400000
-        )
-        val post4 = Post(
-            id = UUID.randomUUID().toString(),
-            ownerId = "user4",
-            userName = "Avraham",
-            text = "Found a small poodle without a collar.",
-            isLost = false,
-            petType = "Dog",
-            lastSeenLocation = "Jerusalem",
-            imageUrl = "https://images.dog.ceo/breeds/poodle-toy/n02113624_9550.jpg",
-            timestamp = now
-        )
-
-        _allPosts.value = listOf(post1, post2, post3, post4)
+        _allPosts.value = repository.getAllPosts()
         applyFilters()
     }
 
     fun addPost(post: Post) {
-        val currentList = _allPosts.value ?: emptyList()
-        _allPosts.value = currentList + post
+        repository.addPost(post)
+
+        _allPosts.value = repository.getAllPosts()
         applyFilters()
     }
 
