@@ -53,7 +53,7 @@ class PostsAdapter(
 
         fun bind(post: Post) {
             locationView.text = post.lastSeenLocation
-            descriptionView.text = post.text
+            descriptionView.text = post.description
             typeView.text = post.petType
 
             val dateFormat = SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault())
@@ -61,12 +61,12 @@ class PostsAdapter(
 
             val context = itemView.context
 
-            val textResId = if (post.isLost) R.string.lost else R.string.found
-            val colorResId = if (post.isLost) R.color.status_lost else R.color.status_found
+            val badgeTextId = if (post.isLost) R.string.lost else R.string.found
+            val badgeColorId = if (post.isLost) R.color.status_lost else R.color.status_found
 
-            statusView.text = ContextCompat.getString(context, textResId)
+            statusView.text = ContextCompat.getString(context, badgeTextId)
             statusView.setBackgroundResource(R.drawable.bg_badge)
-            statusView.background.mutate().setTint(ContextCompat.getColor(context, colorResId))
+            statusView.background.mutate().setTint(ContextCompat.getColor(context, badgeColorId))
 
             if (post.imageUrl.isNotEmpty()) {
                 Picasso.get()

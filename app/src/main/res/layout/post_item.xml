@@ -126,6 +126,7 @@
             app:layout_constraintTop_toBottomOf="@id/post_description"
             app:layout_constraintStart_toStartOf="parent"/>
 
+<!--TODO: Add comments to textview-->
         <TextView
             android:id="@+id/post_comment_count"
             android:layout_width="wrap_content"

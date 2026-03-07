@@ -59,7 +59,7 @@ class PostsViewModel : ViewModel() {
 
         if (currentSearchQuery.isNotBlank()) {
             result = result.filter {
-                it.text.contains(currentSearchQuery, ignoreCase = true) ||
+                it.description.contains(currentSearchQuery, ignoreCase = true) ||
                         it.lastSeenLocation.contains(currentSearchQuery, ignoreCase = true)
             }
         }

@@ -69,8 +69,8 @@ class PostsListFragment : Fragment() {
 
         setupFilterUI(view)
 
-        val fab = view.findViewById<FloatingActionButton>(R.id.add_post_fab)
-        fab.setOnClickListener {
+        val floatingActionButton = view.findViewById<FloatingActionButton>(R.id.add_post_fab)
+        floatingActionButton.setOnClickListener {
             // TODO: navigate to an "Add Post" screen
         }
     }
@@ -113,9 +113,9 @@ class PostsListFragment : Fragment() {
 
         val adapter = object : ArrayAdapter<String>(requireContext(), R.layout.item_dropdown, items) {
             override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-                val v = super.getView(position, convertView, parent) as CheckedTextView
-                v.isChecked = (position == selectedIndex)
-                return v
+                val checkedTextView = super.getView(position, convertView, parent) as CheckedTextView
+                checkedTextView.isChecked = (position == selectedIndex)
+                return checkedTextView
             }
         }
 

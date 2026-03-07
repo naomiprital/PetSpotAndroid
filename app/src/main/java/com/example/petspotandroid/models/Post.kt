@@ -9,7 +9,7 @@ data class Post(
     val id: String,
     val ownerId: String,
     val userName: String,
-    val text: String,
+    val description: String,
     val imageUrl: String,
     val timestamp: Long = System.currentTimeMillis(),
     val isLost: Boolean = true,
