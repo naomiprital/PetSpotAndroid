@@ -8,6 +8,6 @@
     <fragment
         android:id="@+id/postsListFragment"
         android:name="com.example.petspotandroid.ui.PostsListFragment"
-        android:label="PetSpot Feed"
+        android:label="@string/feed_label"
         tools:layout="@layout/fragment_posts_list" />
 </navigation>

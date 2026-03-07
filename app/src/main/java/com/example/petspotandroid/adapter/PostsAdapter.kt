@@ -59,19 +59,16 @@ class PostsAdapter(
             val dateFormat = SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault())
             dateView.text = dateFormat.format(Date(post.timestamp))
 
-            if (post.isLost) {
-                statusView.text = ContextCompat.getString(itemView.context, R.string.lost)
-                statusView.setBackgroundResource(R.drawable.bg_badge)
-                val redColor = ContextCompat.getColor(itemView.context, R.color.status_lost)
-                statusView.background.mutate().setTint(redColor)
-            } else {
-                statusView.text = ContextCompat.getString(itemView.context, R.string.found)
-                statusView.setBackgroundResource(R.drawable.bg_badge)
-                val greenColor = ContextCompat.getColor(itemView.context, R.color.status_found)
-                statusView.background.mutate().setTint(greenColor)
-            }
+            val context = itemView.context
 
-            if (!post.imageUrl.isNullOrEmpty()) {
+            val textResId = if (post.isLost) R.string.lost else R.string.found
+            val colorResId = if (post.isLost) R.color.status_lost else R.color.status_found
+
+            statusView.text = ContextCompat.getString(context, textResId)
+            statusView.setBackgroundResource(R.drawable.bg_badge)
+            statusView.background.mutate().setTint(ContextCompat.getColor(context, colorResId))
+
+            if (post.imageUrl.isNotEmpty()) {
                 Picasso.get()
                     .load(post.imageUrl)
                     .fit()

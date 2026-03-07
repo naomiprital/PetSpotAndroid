@@ -10,7 +10,7 @@ data class Post(
     val ownerId: String,
     val userName: String,
     val text: String,
-    val imageUrl: String? = null,
+    val imageUrl: String,
     val timestamp: Long = System.currentTimeMillis(),
     val isLost: Boolean = true,
     val petType: String = "Dog",
