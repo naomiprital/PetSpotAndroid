@@ -1,6 +1,7 @@
 package com.example.petspotandroid
 
 import android.os.Bundle
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.navigation.NavController
@@ -23,6 +24,21 @@ class MainActivity : AppCompatActivity() {
         val navHostFragment = supportFragmentManager
             .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         navController = navHostFragment.navController
+
+        navController.addOnDestinationChangedListener { _, destination, _ ->
+            // Check which screen we are currently looking at
+            when (destination.id) {
+                // If it's an Auth screen, hide the Toolbar
+                R.id.authFragment,
+                R.id.forgotPasswordFragment -> {
+                    toolbar.visibility = View.GONE
+                }
+                // For the Feed and all other future screens, show the Toolbar
+                else -> {
+                    toolbar.visibility = View.VISIBLE
+                }
+            }
+        }
 
         NavigationUI.setupActionBarWithNavController(this, navController)
     }
