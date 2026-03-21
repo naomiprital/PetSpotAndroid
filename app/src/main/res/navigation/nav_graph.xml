@@ -3,57 +3,28 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/loginFragment">
+    app:startDestination="@id/authFragment">
 
-    <!-- LOGIN SCREEN -->
     <fragment
-        android:id="@+id/loginFragment"
-        android:name="com.example.petspotandroid.ui.authentication.LoginFragment"
-        android:label="Login"
-        tools:layout="@layout/fragment_login">
+        android:id="@+id/authFragment"
+        android:name="com.example.petspotandroid.ui.authentication.AuthFragment"
+        android:label="Authentication"
+        tools:layout="@layout/fragment_auth">
 
-        <!-- Action: Go to Sign Up -->
         <action
-            android:id="@+id/action_loginFragment_to_signUpFragment"
-            app:destination="@id/signUpFragment" />
-
-        <!-- Action: Go to Forgot Password -->
-        <action
-            android:id="@+id/action_loginFragment_to_forgotPasswordFragment"
+            android:id="@+id/action_authFragment_to_forgotPasswordFragment"
             app:destination="@id/forgotPasswordFragment" />
 
-        <!-- Action: Go to Feed (Successful Login)
-             popUpTo clears the backstack so they can't press 'Back' to return to login -->
         <action
-            android:id="@+id/action_loginFragment_to_feedFragment"
-            app:destination="@id/postsListFragment"
-            app:popUpTo="@id/loginFragment"
-            app:popUpToInclusive="true" />
+            android:id="@+id/action_authFragment_to_feedFragment"
+            app:destination="@id/postsListFragment" />
     </fragment>
 
-    <!-- SIGN UP SCREEN -->
-    <fragment
-        android:id="@+id/signUpFragment"
-        android:name="com.example.petspotandroid.ui.authentication.SignUpFragment"
-        android:label="Sign Up"
-        tools:layout="@layout/fragment_sign_up">
-
-        <!-- Action: Go to Feed (Successful Registration) -->
-        <action
-            android:id="@+id/action_signUpFragment_to_feedFragment"
-            app:destination="@id/postsListFragment"
-            app:popUpTo="@id/loginFragment"
-            app:popUpToInclusive="true" />
-    </fragment>
-
-    <!-- FORGOT PASSWORD SCREEN -->
     <fragment
         android:id="@+id/forgotPasswordFragment"
         android:name="com.example.petspotandroid.ui.authentication.ForgotPasswordFragment"
-        android:label="Forgot Password"
-        tools:layout="@layout/fragment_forgot_password" />
+        android:label="Forgot Password" />
 
-    <!-- MAIN FEED SCREEN -->
     <fragment
         android:id="@+id/postsListFragment"
         android:name="com.example.petspotandroid.ui.PostsListFragment"

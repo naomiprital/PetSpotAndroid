@@ -6,8 +6,10 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "users")
 data class User(
     @PrimaryKey
-    val id: String, // String ID to match Firebase later
-    val name: String,
+    val id: String,
+    val firstName: String,
+    val lastName: String,
     val email: String,
+    val phone: String,
     val avatarUrl: String? = null
 )

@@ -9,4 +9,7 @@
     <color name="selected">#3b7eeb</color>
     <color name="status_lost">#f44336</color>
     <color name="status_found">#4caf50</color>
+    <color name="app_slogan">#757575</color>
+    <color name="auth_background">#f5f6f8</color>
+    <color name="auth_form_background">#fafafa</color>
 </resources>

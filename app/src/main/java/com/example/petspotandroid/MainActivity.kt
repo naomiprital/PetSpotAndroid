@@ -7,7 +7,6 @@ import androidx.appcompat.widget.Toolbar
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.NavigationUI
-import androidx.navigation.ui.setupWithNavController
 
 class MainActivity : AppCompatActivity() {
 
@@ -26,15 +25,11 @@ class MainActivity : AppCompatActivity() {
             .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         navController = navHostFragment.navController
 
-        // Optional but recommended: This automatically handles the "Up" (back) arrow on your Toolbar
-        toolbar.setupWithNavController(navController)
-
         navController.addOnDestinationChangedListener { _, destination, _ ->
             // Check which screen we are currently looking at
             when (destination.id) {
                 // If it's an Auth screen, hide the Toolbar
-                R.id.loginFragment,
-                R.id.signUpFragment,
+                R.id.authFragment,
                 R.id.forgotPasswordFragment -> {
                     toolbar.visibility = View.GONE
                 }

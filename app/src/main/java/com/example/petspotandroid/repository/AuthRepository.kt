@@ -2,25 +2,39 @@ package com.example.petspotandroid.repository
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
-class AuthRepository(private val auth: FirebaseAuth) {
-
-    // 1. Check if a user is already logged in (Auto-login requirement)
-    val currentUser: FirebaseUser?
-        get() = auth.currentUser
-
-    // 2. Register a new user
-    suspend fun register(email: String, password: String): Result<FirebaseUser> {
+class AuthRepository(
+    private val auth: FirebaseAuth,
+    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
+) {
+    suspend fun register(
+        email: String,
+        password: String,
+        firstName: String,
+        lastName: String,
+        phone: String
+    ): Result<Unit> {
         return try {
-            val result = auth.createUserWithEmailAndPassword(email, password).await()
-            Result.success(result.user!!)
+            val authResult = auth.createUserWithEmailAndPassword(email, password).await()
+            val userId = authResult.user?.uid ?: throw Exception("User creation failed: ID is null")
+
+            val userProfile = hashMapOf(
+                "firstName" to firstName,
+                "lastName" to lastName,
+                "phone" to phone,
+                "email" to email,
+                "accountCreated" to System.currentTimeMillis()
+            )
+
+            firestore.collection("users").document(userId).set(userProfile).await()
+            Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    // 3. Login an existing user
     suspend fun login(email: String, password: String): Result<FirebaseUser> {
         return try {
             val result = auth.signInWithEmailAndPassword(email, password).await()
@@ -30,7 +44,6 @@ class AuthRepository(private val auth: FirebaseAuth) {
         }
     }
 
-    // 4. Send Password Reset Email
     suspend fun resetPassword(email: String): Result<Boolean> {
         return try {
             auth.sendPasswordResetEmail(email).await()
@@ -40,7 +53,6 @@ class AuthRepository(private val auth: FirebaseAuth) {
         }
     }
 
-    // 5. Logout
     fun logout() {
         auth.signOut()
     }
