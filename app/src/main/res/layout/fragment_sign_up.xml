@@ -10,6 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginTop="8dp"
+        android:baselineAligned="false"
         android:orientation="horizontal"
         app:layout_constraintTop_toTopOf="parent">
 
@@ -224,6 +225,7 @@
         android:textStyle="bold"
         app:backgroundTint="@color/petspot_orange"
         app:cornerRadius="16dp"
-        app:layout_constraintTop_toBottomOf="@id/tilPassword" />
+        app:layout_constraintTop_toBottomOf="@id/tilPassword"
+        app:layout_constraintBottom_toBottomOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

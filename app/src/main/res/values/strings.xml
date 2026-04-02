@@ -29,8 +29,9 @@
     <string name="last_name">LAST NAME</string>
     <string name="last_name_hint">Doe</string>
     <string name="phone_number">PHONE NUMBER</string>
-    <string name="phone_hint">+972-50-000-0000</string>
+    <string name="phone_hint">+972–50–000–0000</string>
     <string name="register">Join the Community</string>
+    <string name="login">Login</string>
 
     <string-array name="filter_types_array">
         <item>All Types</item>
