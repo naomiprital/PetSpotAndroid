@@ -7,12 +7,14 @@ import androidx.room.PrimaryKey
 data class Post(
     @PrimaryKey
     val id: String,
-    val ownerId: String,
-    val userName: String,
+    val authorId: String = "example_user",
+    val userName: String = "Example User",
     val description: String,
     val imageUrl: String,
-    val timestamp: Long = System.currentTimeMillis(),
+    val createdAt: Long = System.currentTimeMillis(),
     val isLost: Boolean = true,
     val petType: String = "Dog",
-    val lastSeenLocation: String = ""
+    val lastSeenLocation: String = "",
+    val contactNumber: String = "",
+    val eventDate: String = ""
 )
