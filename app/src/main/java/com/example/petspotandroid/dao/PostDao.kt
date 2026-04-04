@@ -1,4 +1,4 @@
-package com.example.petspotandroid.models
+package com.example.petspotandroid.dao
 
 import androidx.lifecycle.LiveData
 import androidx.room.Dao
@@ -6,6 +6,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import com.example.petspotandroid.data.models.Post
 
 @Dao
 interface PostDao {
@@ -16,8 +17,8 @@ interface PostDao {
     fun getPostsByUser(userId: String): LiveData<List<Post>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insert(post: Post)
+    suspend fun insert(post: Post): Long
 
     @Delete
-    fun delete(post: Post)
+    suspend fun delete(post: Post): Int
 }

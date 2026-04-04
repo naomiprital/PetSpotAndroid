@@ -2,8 +2,8 @@ package com.example.petspotandroid.adapter
 
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.adapter.FragmentStateAdapter
-import com.example.petspotandroid.ui.authentication.LoginFragment
-import com.example.petspotandroid.ui.authentication.SignUpFragment
+import com.example.petspotandroid.features.authentication.LoginFragment
+import com.example.petspotandroid.features.authentication.SignUpFragment
 
 class AuthPagerAdapter(
     fragment: Fragment

@@ -131,15 +131,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp">
-
-                    <include
-                        android:id="@+id/layoutLogin"
-                        layout="@layout/fragment_login" />
-
-                    <include
-                        android:id="@+id/layoutSignUp"
-                        layout="@layout/fragment_sign_up"
-                        android:visibility="gone" /> </FrameLayout>
+                    <!-- Fragments will be injected here dynamically -->
+                </FrameLayout>
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>

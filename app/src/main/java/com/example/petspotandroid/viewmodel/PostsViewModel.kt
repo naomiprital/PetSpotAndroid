@@ -3,8 +3,8 @@ package com.example.petspotandroid.viewmodel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.example.petspotandroid.models.Post
-import com.example.petspotandroid.repository.PostRepository
+import com.example.petspotandroid.data.models.Post
+import com.example.petspotandroid.data.repository.PostRepository
 
 enum class FilterType {
     ALL,

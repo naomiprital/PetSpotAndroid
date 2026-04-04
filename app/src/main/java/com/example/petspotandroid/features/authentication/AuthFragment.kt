@@ -1,4 +1,4 @@
-package com.example.petspotandroid.ui.authentication
+package com.example.petspotandroid.features.authentication
 
 import android.graphics.Color
 import android.os.Bundle
@@ -8,11 +8,8 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.example.petspotandroid.R
 import com.google.android.material.card.MaterialCardView
-import androidx.core.view.isVisible
 
 class AuthFragment : Fragment(R.layout.fragment_auth) {
-    private lateinit var layoutLogin: View
-    private lateinit var layoutSignUp: View
     private lateinit var tabLoginBg: MaterialCardView
     private lateinit var tabSignUpBg: MaterialCardView
     private lateinit var tvLoginText: TextView
@@ -22,8 +19,6 @@ class AuthFragment : Fragment(R.layout.fragment_auth) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        layoutLogin = view.findViewById(R.id.layoutLogin)
-        layoutSignUp = view.findViewById(R.id.layoutSignUp)
         tabLoginBg = view.findViewById(R.id.tabLoginBg)
         tabSignUpBg = view.findViewById(R.id.tabSignUpBg)
         tvLoginText = view.findViewById(R.id.tvLoginText)
@@ -39,17 +34,16 @@ class AuthFragment : Fragment(R.layout.fragment_auth) {
             showSignUp()
         }
 
-        // Ensure correct state on rotation or returning from backstack
-        if (layoutSignUp.isVisible) {
-            showSignUp()
-        } else {
+        // Default to Login if no state is saved
+        if (savedInstanceState == null) {
             showLogin()
         }
     }
 
     private fun showLogin() {
-        layoutLogin.visibility = View.VISIBLE
-        layoutSignUp.visibility = View.GONE
+        childFragmentManager.beginTransaction()
+            .replace(R.id.formContainer, LoginFragment())
+            .commit()
 
         tabLoginBg.setCardBackgroundColor(Color.WHITE)
         tvLoginText.setTextColor(ContextCompat.getColor(requireContext(), R.color.petspot_orange))
@@ -60,8 +54,9 @@ class AuthFragment : Fragment(R.layout.fragment_auth) {
     }
 
     private fun showSignUp() {
-        layoutLogin.visibility = View.GONE
-        layoutSignUp.visibility = View.VISIBLE
+        childFragmentManager.beginTransaction()
+            .replace(R.id.formContainer, SignUpFragment())
+            .commit()
 
         tabSignUpBg.setCardBackgroundColor(Color.WHITE)
         tvSignUpText.setTextColor(ContextCompat.getColor(requireContext(), R.color.petspot_orange))

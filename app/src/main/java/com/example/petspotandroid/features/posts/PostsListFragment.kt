@@ -1,10 +1,11 @@
-package com.example.petspotandroid.ui
+package com.example.petspotandroid.features.posts
 
 import android.graphics.Typeface
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
+import android.view.SoundEffectConstants
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
@@ -159,7 +160,7 @@ class PostsListFragment : Fragment() {
             isDismissing = true
             textView.postDelayed({ isDismissing = false }, 100)
             if (!itemWasClicked) {
-                textView.playSoundEffect(android.view.SoundEffectConstants.CLICK)
+                textView.playSoundEffect(SoundEffectConstants.CLICK)
             }
         }
 

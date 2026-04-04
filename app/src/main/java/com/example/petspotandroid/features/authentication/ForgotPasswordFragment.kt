@@ -1,4 +1,4 @@
-package com.example.petspotandroid.ui.authentication
+package com.example.petspotandroid.features.authentication
 
 import androidx.fragment.app.Fragment
 

@@ -1,4 +1,4 @@
-package com.example.petspotandroid
+package com.example.petspotandroid.base
 
 import android.os.Bundle
 import android.view.View
@@ -7,6 +7,7 @@ import androidx.appcompat.widget.Toolbar
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.NavigationUI
+import com.example.petspotandroid.R
 
 class MainActivity : AppCompatActivity() {
 
