@@ -35,7 +35,7 @@
                 android:layout_height="24dp"
                 android:layout_alignParentEnd="true"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/close"
+                android:contentDescription="@string/close_button"
                 android:src="@android:drawable/ic_menu_close_clear_cancel"
                 app:tint="@color/gray_text" />
         </RelativeLayout>
