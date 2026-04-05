@@ -4,11 +4,11 @@ import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.View
 import android.widget.TextView
-import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import com.example.petspotandroid.R
+import com.example.petspotandroid.base.ToastHelper
 import com.example.petspotandroid.dao.AppLocalDb
 import com.example.petspotandroid.data.repository.AuthRepository
 import com.example.petspotandroid.viewmodel.AuthViewModel
@@ -33,7 +33,7 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
             }
         }
 
-        viewModel = ViewModelProvider(this, factory)[AuthViewModel::class.java]
+        viewModel = ViewModelProvider(requireActivity(), factory)[AuthViewModel::class.java]
 
         val etEmail = view.findViewById<TextInputEditText>(R.id.etEmail)
         val etPassword = view.findViewById<TextInputEditText>(R.id.etPassword)
@@ -47,7 +47,7 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
             if (email.isNotEmpty() && password.isNotEmpty()) {
                 viewModel.login(email, password)
             } else {
-                Toast.makeText(requireContext(), "Please fill out all fields", Toast.LENGTH_SHORT).show()
+                ToastHelper.showCustomToast(view, "Please fill out all fields")
             }
         }
 
@@ -68,10 +68,8 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
 
         viewModel.errorMessage.observe(viewLifecycleOwner) { message ->
             if (!message.isNullOrEmpty()) {
-                Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
+                ToastHelper.showCustomToast(requireView(), message)
             }
         }
-
-        viewModel.checkCurrentUser()
     }
 }

@@ -47,25 +47,30 @@ class AuthRepository(private val userDao: UserDao, private val context: Context)
 
     suspend fun getUserData(userId: String): Result<User> {
         return try {
-            val localUser = userDao.getUserById(userId)
-            if (localUser != null) {
-                return Result.success(localUser)
-            }
-
             val document = firestore.collection("users").document(userId).get().await()
             val remoteUser = document.toObject(User::class.java)
+            
             if (remoteUser != null) {
                 userDao.registerUser(remoteUser)
                 Result.success(remoteUser)
             } else {
-                Result.failure(Exception("User data not found"))
+                val localUser = userDao.getUserById(userId)
+                if (localUser != null) {
+                    Result.success(localUser)
+                } else {
+                    Result.failure(Exception("User data not found in Firestore or Local DB"))
+                }
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            val localUser = userDao.getUserById(userId)
+            if (localUser != null) {
+                Result.success(localUser)
+            } else {
+                Result.failure(e)
+            }
         }
     }
 
-    //    TODO: NEXT TO BE IMPLEMENTED
     suspend fun resetPassword(email: String): Result<Boolean> {
         return try {
             auth.sendPasswordResetEmail(email).await()

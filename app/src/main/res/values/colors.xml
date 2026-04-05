@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="petspot_orange">#f97316</color>
-    <color name="black">#ff000000</color>
-    <color name="white">#ffffffff</color>
     <color name="filters_background">#f5f6f8</color>
     <color name="app_background">#e6eaf0</color>
     <color name="light_gray">#C2CAD0</color>
@@ -18,4 +16,6 @@
     <color name="divider">#EEEEEE</color>
     <color name="navigate_button">#546E7A</color>
     <color name="logout">#E53935</color>
+    <color name="launcher_background">#3DDC84</color>
+    <color name="launcher_line">#33FFFFFF</color>
 </resources>

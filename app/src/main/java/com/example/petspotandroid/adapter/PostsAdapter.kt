@@ -69,6 +69,7 @@ class PostsAdapter(
                     .fit()
                     .centerCrop()
                     .placeholder(android.R.drawable.ic_menu_camera)
+                    .error(android.R.drawable.ic_menu_camera)
                     .into(imageView)
             } else {
                 imageView.setImageResource(android.R.drawable.ic_menu_camera)

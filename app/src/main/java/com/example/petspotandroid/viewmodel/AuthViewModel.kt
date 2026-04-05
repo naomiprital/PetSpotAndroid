@@ -12,13 +12,13 @@ import kotlinx.coroutines.launch
 class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
-    
+
     private val _user = MutableLiveData<FirebaseUser?>()
     val user: LiveData<FirebaseUser?> = _user
 
     private val _userData = MutableLiveData<User?>()
     val userData: LiveData<User?> = _userData
-    
+
     private val _errorMessage = MutableLiveData<String>()
     val errorMessage: LiveData<String> = _errorMessage
 
@@ -28,7 +28,10 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
 
     fun checkCurrentUser() {
         val currentUser = repository.getCurrentUser()
-        _user.value = currentUser
+        if (_user.value?.uid != currentUser?.uid) {
+            _user.value = currentUser
+        }
+
         if (currentUser != null) {
             loadUserData(currentUser.uid)
         } else {
@@ -36,11 +39,20 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
         }
     }
 
+    fun refreshUserData() {
+        val currentUser = repository.getCurrentUser()
+        if (currentUser != null) {
+            loadUserData(currentUser.uid)
+        }
+    }
+
     private fun loadUserData(userId: String) {
         viewModelScope.launch {
             val result = repository.getUserData(userId)
             result.onSuccess { user ->
-                _userData.value = user
+                if (_userData.value != user) {
+                    _userData.value = user
+                }
             }
         }
     }

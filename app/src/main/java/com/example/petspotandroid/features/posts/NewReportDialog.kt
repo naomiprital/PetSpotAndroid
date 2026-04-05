@@ -16,7 +16,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.ViewModelProvider
 import com.example.petspotandroid.R
-import com.example.petspotandroid.models.Post
+import com.example.petspotandroid.data.models.Post
 import com.example.petspotandroid.viewmodel.PostsViewModel
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
