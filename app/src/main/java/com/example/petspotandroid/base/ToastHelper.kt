@@ -25,7 +25,7 @@ object ToastHelper {
         when (params) {
             is FrameLayout.LayoutParams -> {
                 params.gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
-                params.bottomMargin = 64 // Stick more to the bottom (was 120)
+                params.bottomMargin = 64
                 params.width = FrameLayout.LayoutParams.WRAP_CONTENT
                 snackbarView.layoutParams = params
             }
