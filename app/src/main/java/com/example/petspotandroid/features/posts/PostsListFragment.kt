@@ -72,7 +72,8 @@ class PostsListFragment : Fragment() {
 
         val floatingActionButton = view.findViewById<FloatingActionButton>(R.id.add_post_fab)
         floatingActionButton.setOnClickListener {
-            // TODO: navigate to an "Add Post" screen
+            val dialog = NewReportDialog()
+            dialog.show(parentFragmentManager, "NewReportDialog")
         }
     }
 
