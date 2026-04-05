@@ -63,7 +63,6 @@ dependencies {
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
 
-    // Firebase dependencies - BOM should come first
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.auth)

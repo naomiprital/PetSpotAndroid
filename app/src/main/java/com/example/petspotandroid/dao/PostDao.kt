@@ -10,10 +10,10 @@ import com.example.petspotandroid.data.models.Post
 
 @Dao
 interface PostDao {
-    @Query("SELECT * FROM posts ORDER BY timestamp DESC")
+    @Query("SELECT * FROM posts ORDER BY createdAt DESC")
     fun getAllPosts(): LiveData<List<Post>>
 
-    @Query("SELECT * FROM posts WHERE ownerId = :userId ORDER BY timestamp DESC")
+    @Query("SELECT * FROM posts WHERE authorId = :userId ORDER BY createdAt DESC")
     fun getPostsByUser(userId: String): LiveData<List<Post>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

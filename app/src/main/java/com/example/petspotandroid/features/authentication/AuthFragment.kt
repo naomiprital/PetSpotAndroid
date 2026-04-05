@@ -25,7 +25,6 @@ class AuthFragment : Fragment(R.layout.fragment_auth) {
         tvSignUpText = view.findViewById(R.id.tvSignUpText)
         tvTerms = view.findViewById(R.id.tvTerms)
 
-        // Handle Toggles
         tabLoginBg.setOnClickListener {
             showLogin()
         }
@@ -34,7 +33,6 @@ class AuthFragment : Fragment(R.layout.fragment_auth) {
             showSignUp()
         }
 
-        // Default to Login if no state is saved
         if (savedInstanceState == null) {
             showLogin()
         }

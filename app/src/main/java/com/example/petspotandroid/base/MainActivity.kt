@@ -10,10 +10,12 @@ import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.lifecycle.Observer
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import com.example.petspotandroid.R
 import com.example.petspotandroid.dao.AppLocalDb
+import com.example.petspotandroid.data.models.User
 import com.example.petspotandroid.data.repository.AuthRepository
 import com.example.petspotandroid.viewmodel.AuthViewModel
 import com.example.petspotandroid.viewmodel.AuthViewModelFactory
@@ -52,6 +54,8 @@ class MainActivity : AppCompatActivity() {
             if (user?.avatarUrl != null && user.avatarUrl.isNotEmpty()) {
                 Picasso.get()
                     .load(user.avatarUrl)
+                    .fit()
+                    .centerCrop()
                     .placeholder(R.drawable.ic_launcher_background)
                     .error(R.drawable.ic_launcher_background)
                     .into(ivAvatar)
@@ -85,7 +89,7 @@ class MainActivity : AppCompatActivity() {
 
         btnProfileMenu.setOnClickListener { anchorView ->
             val popupView = layoutInflater.inflate(R.layout.layout_profile_dropdown, null)
-            val widthInPixels = (200 * resources.displayMetrics.density).toInt()
+            val widthInPixels = (220 * resources.displayMetrics.density).toInt()
 
             val popupWindow = PopupWindow(
                 popupView,
@@ -103,19 +107,49 @@ class MainActivity : AppCompatActivity() {
             val tvMenuEmail = popupView.findViewById<TextView>(R.id.tvMenuEmail)
             val ivMenuAvatar = popupView.findViewById<ImageView>(R.id.ivMenuAvatar)
 
-            val currentUser = authViewModel.user.value
-            val userData = authViewModel.userData.value
-
-            if (currentUser != null) {
-                tvMenuEmail.text = currentUser.email
-                tvMenuName.text = if (userData != null) "${userData.firstName} ${userData.lastName}" else "PetSpot User"
-                
-                if (userData?.avatarUrl != null && userData.avatarUrl.isNotEmpty()) {
-                    Picasso.get()
-                        .load(userData.avatarUrl)
-                        .placeholder(R.drawable.ic_launcher_background)
-                        .into(ivMenuAvatar)
+            val updateUI = { user: com.google.firebase.auth.FirebaseUser?, data: User? ->
+                if (user != null) {
+                    tvMenuEmail.text = user.email
                 }
+                
+                if (data != null) {
+                    val fullName = "${data.firstName} ${data.lastName}".trim()
+                    if (fullName.isNotEmpty()) {
+                        tvMenuName.text = fullName
+                    } else {
+                        tvMenuName.text = if (!user?.displayName.isNullOrBlank()) user?.displayName else "PetSpot User"
+                    }
+                    
+                    if (!data.avatarUrl.isNullOrEmpty()) {
+                        Picasso.get()
+                            .load(data.avatarUrl)
+                            .fit()
+                            .centerCrop()
+                            .placeholder(R.drawable.ic_launcher_background)
+                            .into(ivMenuAvatar)
+                    }
+                } else {
+                    tvMenuName.text = if (!user?.displayName.isNullOrBlank()) user?.displayName else "PetSpot User"
+                }
+            }
+
+            updateUI(authViewModel.user.value, authViewModel.userData.value)
+            
+            authViewModel.refreshUserData()
+
+            val userObserver = Observer<com.google.firebase.auth.FirebaseUser?> { user ->
+                updateUI(user, authViewModel.userData.value)
+            }
+            val userDataObserver = Observer<User?> { data ->
+                updateUI(authViewModel.user.value, data)
+            }
+
+            authViewModel.user.observeForever(userObserver)
+            authViewModel.userData.observeForever(userDataObserver)
+
+            popupWindow.setOnDismissListener {
+                authViewModel.user.removeObserver(userObserver)
+                authViewModel.userData.removeObserver(userDataObserver)
             }
 
             btnLogout.setOnClickListener {

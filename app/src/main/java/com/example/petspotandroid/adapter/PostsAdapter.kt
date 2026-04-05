@@ -6,14 +6,11 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.example.petspotandroid.R
 import com.example.petspotandroid.data.models.Post
 import com.squareup.picasso.Picasso
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import androidx.core.content.ContextCompat
 
 class PostsAdapter(
     private var posts: List<Post>,
@@ -55,9 +52,7 @@ class PostsAdapter(
             locationView.text = post.lastSeenLocation
             descriptionView.text = post.description
             typeView.text = post.petType
-
-            val dateFormat = SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault())
-            dateView.text = dateFormat.format(Date(post.timestamp))
+            dateView.text = post.eventDate
 
             val context = itemView.context
 
@@ -74,6 +69,7 @@ class PostsAdapter(
                     .fit()
                     .centerCrop()
                     .placeholder(android.R.drawable.ic_menu_camera)
+                    .error(android.R.drawable.ic_menu_camera)
                     .into(imageView)
             } else {
                 imageView.setImageResource(android.R.drawable.ic_menu_camera)

@@ -21,6 +21,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.petspotandroid.R
 import com.example.petspotandroid.adapter.PostsAdapter
+import com.example.petspotandroid.ui.NewReportDialog
 import com.example.petspotandroid.viewmodel.FilterType
 import com.example.petspotandroid.viewmodel.PostsViewModel
 import com.example.petspotandroid.viewmodel.SortOrder
@@ -72,7 +73,8 @@ class PostsListFragment : Fragment() {
 
         val floatingActionButton = view.findViewById<FloatingActionButton>(R.id.add_post_fab)
         floatingActionButton.setOnClickListener {
-            // TODO: navigate to an "Add Post" screen
+            val dialog = NewReportDialog()
+            dialog.show(parentFragmentManager, "NewReportDialog")
         }
     }
 
@@ -112,13 +114,15 @@ class PostsListFragment : Fragment() {
         val grayBackground = ContextCompat.getDrawable(requireContext(), R.drawable.bg_rounded_box)
         popup.setBackgroundDrawable(grayBackground)
 
-        val adapter = object : ArrayAdapter<String>(requireContext(), R.layout.item_dropdown, items) {
-            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-                val checkedTextView = super.getView(position, convertView, parent) as CheckedTextView
-                checkedTextView.isChecked = (position == selectedIndex)
-                return checkedTextView
+        val adapter =
+            object : ArrayAdapter<String>(requireContext(), R.layout.item_dropdown, items) {
+                override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                    val checkedTextView =
+                        super.getView(position, convertView, parent) as CheckedTextView
+                    checkedTextView.isChecked = (position == selectedIndex)
+                    return checkedTextView
+                }
             }
-        }
 
         popup.setAdapter(adapter)
 
@@ -128,7 +132,12 @@ class PostsListFragment : Fragment() {
             textView.text = items[position]
 
             if (position == 0) {
-                textView.setTextColor(ContextCompat.getColor(requireContext(), R.color.black))
+                textView.setTextColor(
+                    ContextCompat.getColor(
+                        requireContext(),
+                        android.R.color.black
+                    )
+                )
                 textView.setTypeface(null, Typeface.NORMAL)
             } else {
                 textView.setTextColor(ContextCompat.getColor(requireContext(), R.color.selected))
@@ -143,7 +152,10 @@ class PostsListFragment : Fragment() {
                         else -> FilterType.ALL
                     }
                 }
-                R.id.dropdown_animal -> currentAnimalFilter = if (position == 0) null else items[position]
+
+                R.id.dropdown_animal -> currentAnimalFilter =
+                    if (position == 0) null else items[position]
+
                 R.id.dropdown_sort -> {
                     currentSortFilter = when (position) {
                         1 -> SortOrder.OLDEST_FIRST

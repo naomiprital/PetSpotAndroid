@@ -5,13 +5,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import com.example.petspotandroid.R
+import com.example.petspotandroid.base.ToastHelper
 import com.example.petspotandroid.dao.AppLocalDb
 import com.example.petspotandroid.data.repository.AuthRepository
 import com.example.petspotandroid.viewmodel.AuthViewModel
@@ -50,7 +50,7 @@ class SignUpFragment : Fragment() {
             AppLocalDb.getDatabase(requireContext()).userDao(),
             requireContext().applicationContext
         )
-        
+
         val factory = object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 @Suppress("UNCHECKED_CAST")
@@ -58,7 +58,7 @@ class SignUpFragment : Fragment() {
             }
         }
 
-        viewModel = ViewModelProvider(this, factory)[AuthViewModel::class.java]
+        viewModel = ViewModelProvider(requireActivity(), factory)[AuthViewModel::class.java]
 
         val etFirstName = view.findViewById<TextInputEditText>(R.id.etFirstName)
         val etLastName = view.findViewById<TextInputEditText>(R.id.etLastName)
@@ -75,7 +75,7 @@ class SignUpFragment : Fragment() {
             val password = etPassword.text.toString().trim()
 
             if (firstName.isEmpty() || lastName.isEmpty() || email.isEmpty() || password.isEmpty() || phone.isEmpty()) {
-                Toast.makeText(requireContext(), "Please fill all fields", Toast.LENGTH_SHORT).show()
+                ToastHelper.showCustomToast(view, "Please fill all fields")
                 return@setOnClickListener
             }
 
@@ -90,14 +90,16 @@ class SignUpFragment : Fragment() {
 
         viewModel.user.observe(viewLifecycleOwner) { firebaseUser ->
             if (firebaseUser != null) {
-                Toast.makeText(requireContext(), "Registration Successful!", Toast.LENGTH_SHORT).show()
-                parentFragment?.findNavController()?.navigate(R.id.action_authFragment_to_feedFragment)
+                Toast.makeText(requireContext(), "Registration Successful!", Toast.LENGTH_SHORT)
+                    .show()
+                parentFragment?.findNavController()
+                    ?.navigate(R.id.action_authFragment_to_feedFragment)
             }
         }
 
         viewModel.errorMessage.observe(viewLifecycleOwner) { message ->
             if (message != null) {
-                Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+                ToastHelper.showCustomToast(requireView(), message)
             }
         }
     }
