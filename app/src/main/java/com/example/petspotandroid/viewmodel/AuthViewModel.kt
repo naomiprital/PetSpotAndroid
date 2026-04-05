@@ -15,12 +15,34 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
     
     private val _user = MutableLiveData<FirebaseUser?>()
     val user: LiveData<FirebaseUser?> = _user
+
+    private val _userData = MutableLiveData<User?>()
+    val userData: LiveData<User?> = _userData
     
     private val _errorMessage = MutableLiveData<String>()
     val errorMessage: LiveData<String> = _errorMessage
 
+    init {
+        checkCurrentUser()
+    }
+
     fun checkCurrentUser() {
-        _user.value = repository.getCurrentUser()
+        val currentUser = repository.getCurrentUser()
+        _user.value = currentUser
+        if (currentUser != null) {
+            loadUserData(currentUser.uid)
+        } else {
+            _userData.value = null
+        }
+    }
+
+    private fun loadUserData(userId: String) {
+        viewModelScope.launch {
+            val result = repository.getUserData(userId)
+            result.onSuccess { user ->
+                _userData.value = user
+            }
+        }
     }
 
     fun login(email: String, password: String) {
@@ -37,6 +59,7 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
 
             result.onSuccess { firebaseUser ->
                 _user.value = firebaseUser
+                loadUserData(firebaseUser.uid)
             }.onFailure { exception ->
                 _errorMessage.value = exception.message ?: "Login failed"
             }
@@ -70,9 +93,16 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
 
             result.onSuccess { firebaseUser ->
                 _user.value = firebaseUser
+                loadUserData(firebaseUser.uid)
             }.onFailure { exception ->
                 _errorMessage.value = exception.message ?: "Registration failed"
             }
         }
+    }
+
+    fun logout() {
+        repository.logout()
+        _user.value = null
+        _userData.value = null
     }
 }

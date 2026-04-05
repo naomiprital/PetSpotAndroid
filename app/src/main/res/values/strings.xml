@@ -32,6 +32,11 @@
     <string name="phone_hint">+972–50–000–0000</string>
     <string name="register">Join the Community</string>
     <string name="login">Login</string>
+    <string name="profile_image">PROFILE IMAGE</string>
+    <string name="tap_to_upload_your_photo">Tap to upload your photo</string>
+    <string name="home_feed">Home Feed</string>
+    <string name="my_profile">My Profile</string>
+    <string name="logout">Logout</string>
 
     <string-array name="filter_types_array">
         <item>All Types</item>

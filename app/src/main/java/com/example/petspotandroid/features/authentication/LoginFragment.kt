@@ -21,9 +21,14 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val repository = AuthRepository(AppLocalDb.getDatabase(requireContext()).userDao())
+        val repository = AuthRepository(
+            AppLocalDb.getDatabase(requireContext()).userDao(),
+            requireContext().applicationContext
+        )
+        
         val factory = object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                @Suppress("UNCHECKED_CAST")
                 return AuthViewModel(repository) as T
             }
         }
@@ -51,18 +56,18 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
         }
 
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
-            btnLogin.isEnabled = !isLoading // Prevent double clicks
+            btnLogin.isEnabled = !isLoading
             btnLogin.text = if (isLoading) "Logging in..." else "Welcome Back!"
         }
 
         viewModel.user.observe(viewLifecycleOwner) { firebaseUser ->
             if (firebaseUser != null) {
-                findNavController().navigate(R.id.action_authFragment_to_feedFragment)
+                parentFragment?.findNavController()?.navigate(R.id.action_authFragment_to_feedFragment)
             }
         }
 
         viewModel.errorMessage.observe(viewLifecycleOwner) { message ->
-            if (message.isNotEmpty()) {
+            if (!message.isNullOrEmpty()) {
                 Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
             }
         }
