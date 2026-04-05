@@ -15,6 +15,24 @@
     <string name="post_user_avatar">post user avatar</string>
     <string name="post_image">post image</string>
     <string name="comments_placeholder">0 comments</string>
+    <string name="publish_new_report">Publish New Report</string>
+    <string name="listing_type">LISTING TYPE</string>
+    <string name="animal_type">ANIMAL TYPE</string>
+    <string name="contact_number">CONTACT NUMBER</string>
+    <string name="last_seen_location">LAST SEEN LOCATION</string>
+    <string name="date_amp_time"><![CDATA[DATE & TIME]]></string>
+    <string name="upload_photo">Upload Photo</string>
+    <string name="detailed_description">DETAILED DESCRIPTION</string>
+    <string name="publish_report">Publish Report</string>
+    <string name="close">close</string>
+    <string name="address_placeholder">e.g. Rothschild Blvd, Tel Aviv</string>
+    <string name="camera_icon">camera icon</string>
+    <string name="description_placeholder">Include details like breed, collar color, behavior, etc.</string>
+    <string name="photo_selected">Photo Selected!</string>
+    <string name="error_missing_fields">Please fill out location and description</string>
+    <string name="report_published">Report Published!</string>
+    <string name="select_date">Select Date</string>
+    <string name="select_time">Select Time</string>
 
     <string-array name="filter_types_array">
         <item>All Types</item>

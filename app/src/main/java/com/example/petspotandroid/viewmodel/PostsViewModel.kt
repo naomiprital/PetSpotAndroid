@@ -74,9 +74,9 @@ class PostsViewModel : ViewModel() {
         }
 
         result = if (currentSort == SortOrder.OLDEST_FIRST) {
-            result.sortedBy { it.timestamp }
+            result.sortedBy { it.createdAt }
         } else {
-            result.sortedByDescending { it.timestamp }
+            result.sortedByDescending { it.createdAt }
         }
 
         _filteredPosts.value = result
