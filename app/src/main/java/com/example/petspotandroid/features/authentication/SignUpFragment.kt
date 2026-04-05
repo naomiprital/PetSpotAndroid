@@ -1,15 +1,11 @@
 package com.example.petspotandroid.features.authentication
 
-import android.net.Uri
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.FrameLayout
-import android.widget.ImageView
-import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
@@ -23,13 +19,27 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 
 class SignUpFragment : Fragment() {
-
     private lateinit var viewModel: AuthViewModel
+//    private var binding: FragmentSignUpBinding? = null
+    private var cameraLauncher: ActivityResultLauncher<Void?>? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+//        binding = SignUpFragment.inflate(layoutInflater, container, false)
+
+//        cameraLauncher = registerForActivityResult(ActivityResultContracts.TakePicturePreview()) {
+//                bitmap ->
+//            bitmap?.let {
+//                binding?.avatarImageView?.setImageBitmap(it)
+//            } ?: Toast.makeText(context, "No image captured", Toast.LENGTH_SHORT).show()
+//        }
+//
+//        binding?.takePictureButton?.setOnClickListener {
+//            cameraLauncher?.launch(null)
+//        }
+
         return inflater.inflate(R.layout.fragment_sign_up, container, false)
     }
 
