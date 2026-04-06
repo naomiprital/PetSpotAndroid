@@ -1,10 +1,12 @@
 package com.example.petspotandroid.features.authentication
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
@@ -14,33 +16,63 @@ import com.example.petspotandroid.R
 import com.example.petspotandroid.base.ToastHelper
 import com.example.petspotandroid.dao.AppLocalDb
 import com.example.petspotandroid.data.repository.AuthRepository
+import com.example.petspotandroid.databinding.FragmentSignUpBinding
 import com.example.petspotandroid.viewmodel.AuthViewModel
-import com.google.android.material.button.MaterialButton
-import com.google.android.material.textfield.TextInputEditText
 
 class SignUpFragment : Fragment() {
     private lateinit var viewModel: AuthViewModel
-//    private var binding: FragmentSignUpBinding? = null
+    private var _binding: FragmentSignUpBinding? = null
+    private val binding get() = _binding!!
     private var cameraLauncher: ActivityResultLauncher<Void?>? = null
+    private var galleryLauncher: ActivityResultLauncher<String>? = null
 
+    @SuppressLint("SetTextI18n")
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-//        binding = SignUpFragment.inflate(layoutInflater, container, false)
+    ): View {
+        _binding = FragmentSignUpBinding.inflate(inflater, container, false)
 
-//        cameraLauncher = registerForActivityResult(ActivityResultContracts.TakePicturePreview()) {
-//                bitmap ->
-//            bitmap?.let {
-//                binding?.avatarImageView?.setImageBitmap(it)
-//            } ?: Toast.makeText(context, "No image captured", Toast.LENGTH_SHORT).show()
-//        }
-//
-//        binding?.takePictureButton?.setOnClickListener {
-//            cameraLauncher?.launch(null)
-//        }
+        cameraLauncher =
+            registerForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
+                bitmap?.let {
+                    binding.ivSelectedImage.setImageBitmap(it)
+                    binding.tvUploadHint.text = "Photo selected"
+                    binding.btnRemoveImage.visibility = View.VISIBLE
+                } ?: Toast.makeText(context, "No image captured", Toast.LENGTH_SHORT).show()
+            }
 
-        return inflater.inflate(R.layout.fragment_sign_up, container, false)
+        galleryLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+            uri?.let {
+                binding.ivSelectedImage.setImageURI(it)
+                binding.tvUploadHint.text = "Photo selected"
+                binding.btnRemoveImage.visibility = View.VISIBLE
+            } ?: Toast.makeText(context, "No image captured", Toast.LENGTH_SHORT).show()
+        }
+
+        binding.btnUploadImage.setOnClickListener {
+            val options = arrayOf("Take Photo", "Choose from Gallery", "Cancel")
+            val builder = android.app.AlertDialog.Builder(requireContext())
+            builder.setTitle("Choose your profile picture")
+
+            builder.setItems(options) { dialog, which ->
+                when (which) {
+                    0 -> cameraLauncher?.launch(null)
+                    1 -> galleryLauncher?.launch("image/*")
+                    2 -> dialog.dismiss()
+                }
+            }
+
+            builder.show()
+        }
+
+        binding.btnRemoveImage.setOnClickListener {
+            binding.ivSelectedImage.setImageResource(R.drawable.ic_cloud_upload)
+            binding.tvUploadHint.text = getString(R.string.tap_to_upload_your_photo)
+            binding.btnRemoveImage.visibility = View.GONE
+        }
+
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -60,19 +92,12 @@ class SignUpFragment : Fragment() {
 
         viewModel = ViewModelProvider(requireActivity(), factory)[AuthViewModel::class.java]
 
-        val etFirstName = view.findViewById<TextInputEditText>(R.id.etFirstName)
-        val etLastName = view.findViewById<TextInputEditText>(R.id.etLastName)
-        val etPhone = view.findViewById<TextInputEditText>(R.id.etPhone)
-        val etEmail = view.findViewById<TextInputEditText>(R.id.etEmail)
-        val etPassword = view.findViewById<TextInputEditText>(R.id.etPassword)
-        val btnSignUp = view.findViewById<MaterialButton>(R.id.btnSignUp)
-
-        btnSignUp.setOnClickListener {
-            val firstName = etFirstName.text.toString().trim()
-            val lastName = etLastName.text.toString().trim()
-            val phone = etPhone.text.toString().trim()
-            val email = etEmail.text.toString().trim()
-            val password = etPassword.text.toString().trim()
+        binding.btnSignUp.setOnClickListener {
+            val firstName = binding.etFirstName.text.toString().trim()
+            val lastName = binding.etLastName.text.toString().trim()
+            val phone = binding.etPhone.text.toString().trim()
+            val email = binding.etEmail.text.toString().trim()
+            val password = binding.etPassword.text.toString().trim()
 
             if (firstName.isEmpty() || lastName.isEmpty() || email.isEmpty() || password.isEmpty() || phone.isEmpty()) {
                 ToastHelper.showCustomToast(view, "Please fill all fields")
@@ -102,5 +127,10 @@ class SignUpFragment : Fragment() {
                 ToastHelper.showCustomToast(requireView(), message)
             }
         }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 }
