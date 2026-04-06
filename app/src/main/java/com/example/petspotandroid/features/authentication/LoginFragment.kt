@@ -22,10 +22,9 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
         super.onViewCreated(view, savedInstanceState)
 
         val repository = AuthRepository(
-            AppLocalDb.getDatabase(requireContext()).userDao(),
-            requireContext().applicationContext
+            AppLocalDb.getDatabase(requireContext()).userDao()
         )
-        
+
         val factory = object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 @Suppress("UNCHECKED_CAST")
@@ -62,7 +61,8 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
 
         viewModel.user.observe(viewLifecycleOwner) { firebaseUser ->
             if (firebaseUser != null) {
-                parentFragment?.findNavController()?.navigate(R.id.action_authFragment_to_feedFragment)
+                parentFragment?.findNavController()
+                    ?.navigate(R.id.action_authFragment_to_feedFragment)
             }
         }
 

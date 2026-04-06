@@ -1,5 +1,6 @@
 package com.example.petspotandroid.viewmodel
 
+import android.graphics.Bitmap
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -84,7 +85,7 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
         firstName: String,
         lastName: String,
         phone: String,
-        avatarUrl: String? = null
+        image: Bitmap? = null
     ) {
         if (email.isBlank() || password.isBlank() || firstName.isBlank() || lastName.isBlank() || phone.isBlank()) {
             _errorMessage.value = "Please fill in all fields"
@@ -97,10 +98,9 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
                 firstName = firstName,
                 lastName = lastName,
                 email = email,
-                phone = phone,
-                avatarUrl = avatarUrl
+                phone = phone
             )
-            val result = repository.register(userProfile, password)
+            val result = repository.register(userProfile, password, image)
             _isLoading.value = false
 
             result.onSuccess { firebaseUser ->

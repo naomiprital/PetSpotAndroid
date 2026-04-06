@@ -74,8 +74,9 @@
                         android:id="@+id/ivAvatar"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
+                        android:contentDescription="@string/user_profile"
                         android:scaleType="centerCrop"
-                        android:src="@drawable/ic_launcher_background" />
+                        android:src="@drawable/ic_person" />
 
                 </com.google.android.material.card.MaterialCardView>
 
@@ -83,6 +84,7 @@
                     android:layout_width="24dp"
                     android:layout_height="16dp"
                     android:layout_marginStart="4dp"
+                    android:contentDescription="@string/dropdown_icon"
                     android:scaleType="fitCenter"
                     android:src="@drawable/ic_toolbar_arrow_down"
                     app:tint="@color/app_slogan" />

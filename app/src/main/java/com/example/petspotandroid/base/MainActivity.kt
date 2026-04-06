@@ -1,5 +1,6 @@
 package com.example.petspotandroid.base
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
@@ -28,7 +29,7 @@ class MainActivity : AppCompatActivity() {
 
     private val authViewModel: AuthViewModel by viewModels {
         val userDao = AppLocalDb.getDatabase(this).userDao()
-        val repository = AuthRepository(userDao, applicationContext)
+        val repository = AuthRepository(userDao)
         AuthViewModelFactory(repository)
     }
 
@@ -56,11 +57,11 @@ class MainActivity : AppCompatActivity() {
                     .load(user.avatarUrl)
                     .fit()
                     .centerCrop()
-                    .placeholder(R.drawable.ic_launcher_background)
-                    .error(R.drawable.ic_launcher_background)
+                    .placeholder(R.drawable.ic_person)
+                    .error(R.drawable.ic_person)
                     .into(ivAvatar)
             } else {
-                ivAvatar.setImageResource(R.drawable.ic_launcher_background)
+                ivAvatar.setImageResource(R.drawable.ic_person)
             }
         }
 
@@ -84,6 +85,7 @@ class MainActivity : AppCompatActivity() {
         setupProfileMenu()
     }
 
+    @SuppressLint("InflateParams")
     private fun setupProfileMenu() {
         val btnProfileMenu = findViewById<MaterialCardView>(R.id.btnProfileMenu)
 
@@ -117,7 +119,7 @@ class MainActivity : AppCompatActivity() {
                     if (fullName.isNotEmpty()) {
                         tvMenuName.text = fullName
                     } else {
-                        tvMenuName.text = if (!user?.displayName.isNullOrBlank()) user?.displayName else "PetSpot User"
+                        tvMenuName.text = if (!user?.displayName.isNullOrBlank()) user.displayName else "PetSpot User"
                     }
                     
                     if (!data.avatarUrl.isNullOrEmpty()) {
@@ -125,11 +127,11 @@ class MainActivity : AppCompatActivity() {
                             .load(data.avatarUrl)
                             .fit()
                             .centerCrop()
-                            .placeholder(R.drawable.ic_launcher_background)
+                            .placeholder(R.drawable.ic_person)
                             .into(ivMenuAvatar)
                     }
                 } else {
-                    tvMenuName.text = if (!user?.displayName.isNullOrBlank()) user?.displayName else "PetSpot User"
+                    tvMenuName.text = if (!user?.displayName.isNullOrBlank()) user.displayName else "PetSpot User"
                 }
             }
 
