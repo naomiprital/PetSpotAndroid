@@ -1,27 +1,41 @@
 package com.example.petspotandroid.data.repository
 
 import android.content.Context
+import android.graphics.Bitmap
 import com.example.petspotandroid.dao.UserDao
+import com.example.petspotandroid.data.firebase.FirebaseStorageModel
 import com.example.petspotandroid.data.models.User
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
+import kotlin.coroutines.resume
 
-class AuthRepository(private val userDao: UserDao, private val context: Context) {
+class AuthRepository(private val userDao: UserDao) {
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
+    private val firebaseStorageModel = FirebaseStorageModel()
 
     suspend fun register(
         user: User,
         password: String,
+        image: Bitmap? = null
     ): Result<FirebaseUser> {
         return try {
             val authResult = auth.createUserWithEmailAndPassword(user.email, password).await()
             val firebaseUser =
                 authResult.user ?: throw Exception("User creation failed: ID is null")
             val userId = firebaseUser.uid
-            val userProfile = user.copy(id = userId)
+            
+            var userProfile = user.copy(id = userId)
+
+            if (image != null) {
+                val imageUrl = uploadImage(image, userProfile)
+                if (imageUrl != null) {
+                    userProfile = userProfile.copy(avatarUrl = imageUrl)
+                }
+            }
 
             firestore.collection("users").document(userId).set(userProfile).await()
             userDao.registerUser(userProfile)
@@ -29,6 +43,12 @@ class AuthRepository(private val userDao: UserDao, private val context: Context)
             Result.success(firebaseUser)
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+
+    private suspend fun uploadImage(image: Bitmap, user: User): String? = suspendCancellableCoroutine { continuation ->
+        firebaseStorageModel.uploadUserImage(image, user) { url ->
+            continuation.resume(url)
         }
     }
 
@@ -71,6 +91,7 @@ class AuthRepository(private val userDao: UserDao, private val context: Context)
         }
     }
 
+//    TODO: Implement
     suspend fun resetPassword(email: String): Result<Boolean> {
         return try {
             auth.sendPasswordResetEmail(email).await()
