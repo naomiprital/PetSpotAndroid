@@ -21,6 +21,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.petspotandroid.R
 import com.example.petspotandroid.adapter.PostsAdapter
 import com.example.petspotandroid.ui.NewReportDialog
+import com.example.petspotandroid.ui.PostDetailsDialog
 import com.example.petspotandroid.viewmodel.FilterType
 import com.example.petspotandroid.viewmodel.PostsViewModel
 import com.example.petspotandroid.viewmodel.SortOrder

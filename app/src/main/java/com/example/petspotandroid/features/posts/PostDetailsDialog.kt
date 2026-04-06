@@ -12,7 +12,7 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.DialogFragment
 import com.example.petspotandroid.R
-import com.example.petspotandroid.models.Post
+import com.example.petspotandroid.data.models.Post
 import com.google.android.material.button.MaterialButton
 import com.squareup.picasso.Picasso
 import java.text.SimpleDateFormat
