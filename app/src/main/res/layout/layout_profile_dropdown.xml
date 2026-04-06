@@ -28,9 +28,9 @@
                 android:id="@+id/ivMenuAvatar"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:contentDescription="TODO: connect to user profile"
+                android:contentDescription="@string/user_profile"
                 android:scaleType="centerCrop"
-                android:src="@drawable/ic_launcher_background" />
+                android:src="@drawable/ic_person" />
         </com.google.android.material.card.MaterialCardView>
 
         <LinearLayout

@@ -56,6 +56,8 @@
     <string name="select_date">Select Date</string>
     <string name="select_time">Select Time</string>
     <string name="remove_image">Remove image</string>
+    <string name="user_profile">User profile</string>
+    <string name="dropdown_icon">Dropdown icon</string>
 
     <string-array name="filter_types_array">
         <item>All Types</item>

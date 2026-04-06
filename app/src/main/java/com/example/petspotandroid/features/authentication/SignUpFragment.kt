@@ -1,6 +1,8 @@
 package com.example.petspotandroid.features.authentication
 
 import android.annotation.SuppressLint
+import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -25,6 +27,7 @@ class SignUpFragment : Fragment() {
     private val binding get() = _binding!!
     private var cameraLauncher: ActivityResultLauncher<Void?>? = null
     private var galleryLauncher: ActivityResultLauncher<String>? = null
+    private var isImageSelected = false
 
     @SuppressLint("SetTextI18n")
     override fun onCreateView(
@@ -39,6 +42,7 @@ class SignUpFragment : Fragment() {
                     binding.ivSelectedImage.setImageBitmap(it)
                     binding.tvUploadHint.text = "Photo selected"
                     binding.btnRemoveImage.visibility = View.VISIBLE
+                    isImageSelected = true
                 } ?: Toast.makeText(context, "No image captured", Toast.LENGTH_SHORT).show()
             }
 
@@ -47,6 +51,7 @@ class SignUpFragment : Fragment() {
                 binding.ivSelectedImage.setImageURI(it)
                 binding.tvUploadHint.text = "Photo selected"
                 binding.btnRemoveImage.visibility = View.VISIBLE
+                isImageSelected = true
             } ?: Toast.makeText(context, "No image captured", Toast.LENGTH_SHORT).show()
         }
 
@@ -70,6 +75,7 @@ class SignUpFragment : Fragment() {
             binding.ivSelectedImage.setImageResource(R.drawable.ic_cloud_upload)
             binding.tvUploadHint.text = getString(R.string.tap_to_upload_your_photo)
             binding.btnRemoveImage.visibility = View.GONE
+            isImageSelected = false
         }
 
         return binding.root
@@ -80,7 +86,6 @@ class SignUpFragment : Fragment() {
 
         val repository = AuthRepository(
             AppLocalDb.getDatabase(requireContext()).userDao(),
-            requireContext().applicationContext
         )
 
         val factory = object : ViewModelProvider.Factory {
@@ -104,12 +109,19 @@ class SignUpFragment : Fragment() {
                 return@setOnClickListener
             }
 
+            val imageBitmap: Bitmap? = if (isImageSelected) {
+                (binding.ivSelectedImage.drawable as? BitmapDrawable)?.bitmap
+            } else {
+                null
+            }
+
             viewModel.register(
                 email = email,
                 password = password,
                 firstName = firstName,
                 lastName = lastName,
                 phone = phone,
+                image = imageBitmap
             )
         }
 
