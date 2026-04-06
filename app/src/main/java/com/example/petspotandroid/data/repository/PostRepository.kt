@@ -1,6 +1,6 @@
-package com.example.petspotandroid.repository
+package com.example.petspotandroid.data.repository
 
-import com.example.petspotandroid.models.Post
+import com.example.petspotandroid.data.models.Post
 import java.util.UUID
 
 class PostRepository {

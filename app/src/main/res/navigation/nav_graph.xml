@@ -3,11 +3,37 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/postsListFragment">
+    app:startDestination="@id/authFragment">
+
+    <fragment
+        android:id="@+id/authFragment"
+        android:name="com.example.petspotandroid.features.authentication.AuthFragment"
+        android:label="Authentication"
+        tools:layout="@layout/fragment_auth">
+
+        <action
+            android:id="@+id/action_authFragment_to_forgotPasswordFragment"
+            app:destination="@id/forgotPasswordFragment" />
+
+        <action
+            android:id="@+id/action_authFragment_to_feedFragment"
+            app:destination="@id/postsListFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/forgotPasswordFragment"
+        android:name="com.example.petspotandroid.features.authentication.ForgotPasswordFragment"
+        android:label="Forgot Password" />
 
     <fragment
         android:id="@+id/postsListFragment"
-        android:name="com.example.petspotandroid.ui.PostsListFragment"
+        android:name="com.example.petspotandroid.features.posts.PostsListFragment"
         android:label="@string/feed_label"
         tools:layout="@layout/fragment_posts_list" />
+
+    <action
+        android:id="@+id/action_global_authFragment"
+        app:destination="@id/authFragment"
+        app:popUpTo="@id/nav_graph"
+        app:popUpToInclusive="true" />
 </navigation>

@@ -9,7 +9,7 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.example.petspotandroid.R
-import com.example.petspotandroid.models.Post
+import com.example.petspotandroid.data.models.Post
 import com.squareup.picasso.Picasso
 
 class PostsAdapter(
@@ -69,6 +69,7 @@ class PostsAdapter(
                     .fit()
                     .centerCrop()
                     .placeholder(android.R.drawable.ic_menu_camera)
+                    .error(android.R.drawable.ic_menu_camera)
                     .into(imageView)
             } else {
                 imageView.setImageResource(android.R.drawable.ic_menu_camera)

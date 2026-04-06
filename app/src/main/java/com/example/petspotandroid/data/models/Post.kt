@@ -1,4 +1,4 @@
-package com.example.petspotandroid.models
+package com.example.petspotandroid.data.models
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
