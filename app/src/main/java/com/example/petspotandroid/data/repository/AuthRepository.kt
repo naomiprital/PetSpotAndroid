@@ -1,6 +1,5 @@
 package com.example.petspotandroid.data.repository
 
-import android.content.Context
 import android.graphics.Bitmap
 import com.example.petspotandroid.dao.UserDao
 import com.example.petspotandroid.data.firebase.FirebaseStorageModel
@@ -91,7 +90,6 @@ class AuthRepository(private val userDao: UserDao) {
         }
     }
 
-//    TODO: Implement
     suspend fun resetPassword(email: String): Result<Boolean> {
         return try {
             auth.sendPasswordResetEmail(email).await()

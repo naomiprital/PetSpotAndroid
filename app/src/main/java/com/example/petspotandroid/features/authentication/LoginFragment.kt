@@ -50,8 +50,21 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
             }
         }
 
+        tvForgotPassword.visibility = View.VISIBLE
         tvForgotPassword.setOnClickListener {
-            findNavController().navigate(R.id.action_authFragment_to_forgotPasswordFragment)
+            val email = etEmail.text.toString().trim()
+            if (email.isNotEmpty()) {
+                viewModel.resetPassword(email)
+            } else {
+                ToastHelper.showCustomToast(view, "Please enter your email to reset password")
+            }
+        }
+
+        viewModel.resetPasswordSuccess.observe(viewLifecycleOwner) { success ->
+            if (success) {
+                ToastHelper.showCustomToast(requireView(), "Password reset email sent!")
+                viewModel.clearResetPasswordStatus()
+            }
         }
 
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
@@ -61,8 +74,10 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
 
         viewModel.user.observe(viewLifecycleOwner) { firebaseUser ->
             if (firebaseUser != null) {
-                parentFragment?.findNavController()
-                    ?.navigate(R.id.action_authFragment_to_feedFragment)
+                val navController = parentFragment?.findNavController()
+                if (navController?.currentDestination?.id != R.id.postsListFragment) {
+                    navController?.navigate(R.id.action_global_postsListFragment)
+                }
             }
         }
 
