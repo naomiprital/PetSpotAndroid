@@ -9,6 +9,7 @@ import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.DialogFragment
 import com.example.petspotandroid.R
@@ -38,6 +39,12 @@ class PostDetailsDialog(private val post: Post) : DialogFragment() {
         }
 
         view.findViewById<TextView>(R.id.posterName).text = post.userName
+        val listerInfoButton = view.findViewById<TextView>(R.id.listerInfoTitle)
+        listerInfoButton.setOnClickListener {
+            Toast.makeText(requireContext(), "Navigating to profile of ${post.userName}...", Toast.LENGTH_SHORT).show()
+
+            // TODO: Use Nav Graph to go to Profile Fragment
+        }
         view.findViewById<TextView>(R.id.locationText).text = post.lastSeenLocation
         view.findViewById<TextView>(R.id.seenOnText).text = post.eventDate
         view.findViewById<TextView>(R.id.descriptionText).text = post.description
@@ -62,6 +69,20 @@ class PostDetailsDialog(private val post: Post) : DialogFragment() {
                 .centerCrop()
                 .placeholder(android.R.drawable.ic_menu_camera)
                 .into(postImage)
+        }
+
+        val profileImageView = view.findViewById<ImageView>(R.id.userProfileImage)
+
+        if (post.authorProfileImageUrl.isNotEmpty()) {
+            Picasso.get()
+                .load(post.authorProfileImageUrl)
+                .placeholder(R.drawable.ic_person)
+                .error(R.drawable.ic_person)
+                .fit()
+                .centerCrop()
+                .into(profileImageView)
+        } else {
+            profileImageView.setImageResource(R.drawable.ic_person)
         }
 
         val callButton = view.findViewById<MaterialButton>(R.id.callButton)

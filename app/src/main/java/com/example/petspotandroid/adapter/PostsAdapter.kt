@@ -47,6 +47,7 @@ class PostsAdapter(
         private val locationView: TextView = itemView.findViewById(R.id.post_location)
         private val dateView: TextView = itemView.findViewById(R.id.post_date)
         private val descriptionView: TextView = itemView.findViewById(R.id.post_description)
+        private val profileImageView: ImageView = itemView.findViewById(R.id.post_user_avatar )
 
         fun bind(post: Post) {
             locationView.text = post.lastSeenLocation
@@ -73,6 +74,18 @@ class PostsAdapter(
                     .into(imageView)
             } else {
                 imageView.setImageResource(android.R.drawable.ic_menu_camera)
+            }
+
+            if (post.authorProfileImageUrl.isNotEmpty()) {
+                Picasso.get()
+                    .load(post.authorProfileImageUrl)
+                    .placeholder(R.drawable.ic_person)
+                    .error(R.drawable.ic_person)
+                    .fit()
+                    .centerCrop()
+                    .into(profileImageView)
+            } else {
+                profileImageView.setImageResource(R.drawable.ic_person)
             }
         }
     }

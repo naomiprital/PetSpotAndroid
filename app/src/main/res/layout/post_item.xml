@@ -155,7 +155,7 @@
                 android:layout_height="match_parent"
                 android:contentDescription="@string/post_user_avatar"
                 android:scaleType="centerCrop"
-                android:src="@android:drawable/sym_def_app_icon" />
+                android:src="@drawable/ic_person" />
         </androidx.cardview.widget.CardView>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
