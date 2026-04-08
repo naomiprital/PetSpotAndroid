@@ -48,7 +48,9 @@ class PostsAdapter(
         private val dateView: TextView = itemView.findViewById(R.id.post_date)
         private val descriptionView: TextView = itemView.findViewById(R.id.post_description)
         private val profileImageView: ImageView = itemView.findViewById(R.id.post_user_avatar )
+        private val commentCountView: TextView = itemView.findViewById(R.id.post_comment_count)
 
+        @SuppressLint("SetTextI18n")
         fun bind(post: Post) {
             locationView.text = post.lastSeenLocation
             descriptionView.text = post.description
@@ -86,6 +88,18 @@ class PostsAdapter(
                     .into(profileImageView)
             } else {
                 profileImageView.setImageResource(R.drawable.ic_person)
+            }
+
+            when (val count = post.comments.size) {
+                0 -> {
+                    commentCountView.text = "No comments yet"
+                }
+                1 -> {
+                    commentCountView.text = "1 comment"
+                }
+                else -> {
+                    commentCountView.text = "$count comments"
+                }
             }
         }
     }

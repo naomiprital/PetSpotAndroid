@@ -1,4 +1,4 @@
-package com.example.petspotandroid.ui
+package com.example.petspotandroid.features.posts
 
 import android.annotation.SuppressLint
 import android.content.Intent
@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
@@ -20,6 +21,14 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import androidx.core.net.toUri
+import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.example.petspotandroid.adapter.CommentsAdapter
+import com.example.petspotandroid.data.models.Comment
+import com.example.petspotandroid.viewmodel.AuthViewModel
+import com.example.petspotandroid.viewmodel.PostsViewModel
+import java.util.UUID
 
 class PostDetailsDialog(private val post: Post) : DialogFragment() {
 
@@ -93,6 +102,50 @@ class PostDetailsDialog(private val post: Post) : DialogFragment() {
                 }
                 startActivity(dialIntent)
             }
+
+        val authViewModel = ViewModelProvider(requireActivity())[AuthViewModel::class.java]
+        val postsViewModel = ViewModelProvider(requireActivity())[PostsViewModel::class.java]
+
+        val commentsRecycler = view.findViewById<RecyclerView>(R.id.commentsRecyclerView)
+        val commentInput = view.findViewById<EditText>(R.id.commentEditText)
+        val sendButton = view.findViewById<ImageButton>(R.id.sendCommentButton)
+        val countBadge = view.findViewById<TextView>(R.id.commentsCountBadge)
+
+        commentsRecycler.layoutManager = LinearLayoutManager(requireContext())
+        val commentsAdapter = CommentsAdapter(post.comments)
+        commentsRecycler.adapter = commentsAdapter
+        countBadge.text = post.comments.size.toString()
+
+        sendButton.setOnClickListener {
+            val text = commentInput.text.toString().trim()
+            if (text.isEmpty()) return@setOnClickListener
+
+            val currentUser = authViewModel.userData.value
+            val currentUserId = authViewModel.user.value?.uid
+
+            if (currentUser != null && currentUserId != null) {
+                val newComment = Comment(
+                    id = UUID.randomUUID().toString(),
+                    authorId = currentUserId,
+                    authorName = "${currentUser.firstName} ${currentUser.lastName}",
+                    authorProfileImageUrl = currentUser.avatarUrl ?: "",
+                    text = text,
+                    timestamp = System.currentTimeMillis()
+                )
+
+                val updatedComments = post.comments.toMutableList()
+                updatedComments.add(newComment)
+                post.comments = updatedComments
+
+                commentsAdapter.updateComments(post.comments)
+                countBadge.text = post.comments.size.toString()
+                commentInput.text.clear()
+
+                postsViewModel.updatePost(post)
+            } else {
+                Toast.makeText(requireContext(), "Must be logged in to comment", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     override fun onStart() {

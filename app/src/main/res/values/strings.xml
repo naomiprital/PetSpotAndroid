@@ -68,6 +68,8 @@
     <string name="remove_image">Remove image</string>
     <string name="user_profile">User profile</string>
     <string name="dropdown_icon">Dropdown icon</string>
+    <string name="write_a_helpful_comment">Write a helpful comment…</string>
+    <string name="send_comment_button">Send comment button</string>
 
     <string-array name="filter_types_array">
         <item>All Types</item>

@@ -18,4 +18,5 @@
     <color name="logout">#E53935</color>
     <color name="launcher_background">#3DDC84</color>
     <color name="launcher_line">#33FFFFFF</color>
+    <color name="comment_gray">#F5F6F8</color>
 </resources>

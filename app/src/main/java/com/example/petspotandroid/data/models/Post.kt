@@ -18,4 +18,5 @@ data class Post(
     var lastSeenLocation: String = "",
     var contactNumber: String = "",
     var eventDate: String = "",
+    var comments: List<Comment> = emptyList()
 )
