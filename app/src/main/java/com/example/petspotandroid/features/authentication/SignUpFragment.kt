@@ -7,7 +7,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
@@ -43,7 +42,7 @@ class SignUpFragment : Fragment() {
                     binding.tvUploadHint.text = "Photo selected"
                     binding.btnRemoveImage.visibility = View.VISIBLE
                     isImageSelected = true
-                } ?: Toast.makeText(context, "No image captured", Toast.LENGTH_SHORT).show()
+                } ?: ToastHelper.showCustomToast(binding.root, "No image captured")
             }
 
         galleryLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
@@ -52,7 +51,7 @@ class SignUpFragment : Fragment() {
                 binding.tvUploadHint.text = "Photo selected"
                 binding.btnRemoveImage.visibility = View.VISIBLE
                 isImageSelected = true
-            } ?: Toast.makeText(context, "No image captured", Toast.LENGTH_SHORT).show()
+            } ?: ToastHelper.showCustomToast(binding.root, "No image selected")
         }
 
         binding.btnUploadImage.setOnClickListener {
@@ -127,10 +126,11 @@ class SignUpFragment : Fragment() {
 
         viewModel.user.observe(viewLifecycleOwner) { firebaseUser ->
             if (firebaseUser != null) {
-                Toast.makeText(requireContext(), "Registration Successful!", Toast.LENGTH_SHORT)
-                    .show()
-                parentFragment?.findNavController()
-                    ?.navigate(R.id.action_authFragment_to_feedFragment)
+                ToastHelper.showCustomToast(requireView(), "Registration Successful!")
+                val navController = parentFragment?.findNavController()
+                if (navController?.currentDestination?.id != R.id.postsListFragment) {
+                    navController?.navigate(R.id.action_global_postsListFragment)
+                }
             }
         }
 

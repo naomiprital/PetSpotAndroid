@@ -13,15 +13,16 @@ import kotlinx.coroutines.launch
 class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
-
     private val _user = MutableLiveData<FirebaseUser?>()
-    val user: LiveData<FirebaseUser?> = _user
 
+    val user: LiveData<FirebaseUser?> = _user
     private val _userData = MutableLiveData<User?>()
     val userData: LiveData<User?> = _userData
-
     private val _errorMessage = MutableLiveData<String>()
     val errorMessage: LiveData<String> = _errorMessage
+    private val _resetPasswordSuccess = MutableLiveData<Boolean>()
+
+    val resetPasswordSuccess: LiveData<Boolean> = _resetPasswordSuccess
 
     init {
         checkCurrentUser()
@@ -116,5 +117,31 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
         repository.logout()
         _user.value = null
         _userData.value = null
+        _resetPasswordSuccess.value = false
+    }
+
+    fun clearResetPasswordStatus() {
+        _resetPasswordSuccess.value = false
+    }
+
+    fun resetPassword(email: String) {
+        if (email.isBlank()) {
+            _errorMessage.value = "Please enter your email address"
+            return
+        }
+
+        _isLoading.value = true
+
+        viewModelScope.launch {
+            val result = repository.resetPassword(email)
+            _isLoading.value = false
+
+            result.onSuccess {
+                _resetPasswordSuccess.value = true
+            }.onFailure { exception ->
+                _errorMessage.value = exception.message ?: "Failed to send reset email"
+                _resetPasswordSuccess.value = false
+            }
+        }
     }
 }

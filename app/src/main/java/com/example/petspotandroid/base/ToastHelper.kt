@@ -1,5 +1,6 @@
 package com.example.petspotandroid.base
 
+import android.graphics.Color
 import android.view.Gravity
 import android.view.View
 import android.widget.FrameLayout
@@ -8,8 +9,16 @@ import androidx.appcompat.content.res.AppCompatResources
 import com.google.android.material.snackbar.Snackbar
 
 object ToastHelper {
+    private var currentSnackbar: Snackbar? = null
+
     fun showCustomToast(view: View, message: String, duration: Int = Snackbar.LENGTH_LONG) {
-        val snackbar = Snackbar.make(view, message, duration)
+        currentSnackbar?.dismiss()
+
+        val rootView = view.rootView.findViewById<View>(android.R.id.content) ?: view
+
+        val snackbar = Snackbar.make(rootView, message, duration)
+
+        currentSnackbar = snackbar
         
         val snackbarView = snackbar.view
         
@@ -19,6 +28,7 @@ object ToastHelper {
         textView.textAlignment = View.TEXT_ALIGNMENT_CENTER
         textView.gravity = Gravity.CENTER
         textView.maxLines = 20
+        textView.setTextColor(Color.WHITE)
         
         val params = snackbarView.layoutParams
         

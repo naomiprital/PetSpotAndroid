@@ -7,7 +7,6 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.PopupWindow
 import android.widget.TextView
-import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
@@ -72,8 +71,7 @@ class MainActivity : AppCompatActivity() {
 
         navController.addOnDestinationChangedListener { _, destination, _ ->
             when (destination.id) {
-                R.id.authFragment,
-                R.id.forgotPasswordFragment -> {
+                R.id.authFragment -> {
                     toolbar.visibility = View.GONE
                 }
                 else -> {
@@ -157,7 +155,7 @@ class MainActivity : AppCompatActivity() {
             btnLogout.setOnClickListener {
                 popupWindow.dismiss()
                 authViewModel.logout()
-                Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show()
+                ToastHelper.showCustomToast(anchorView, "Logged out successfully")
                 if (navController.currentDestination?.id != R.id.authFragment) {
                     navController.navigate(R.id.action_global_authFragment)
                 }
@@ -165,12 +163,12 @@ class MainActivity : AppCompatActivity() {
 
             btnHome.setOnClickListener {
                 popupWindow.dismiss()
-                Toast.makeText(this, "Going Home...", Toast.LENGTH_SHORT).show()
+                ToastHelper.showCustomToast(anchorView, "Going Home...")
             }
 
             btnProfile.setOnClickListener {
                 popupWindow.dismiss()
-                Toast.makeText(this, "Opening Profile...", Toast.LENGTH_SHORT).show()
+                ToastHelper.showCustomToast(anchorView, "Opening Profile...")
             }
 
             popupWindow.showAsDropDown(anchorView, 0, 16, Gravity.END)
