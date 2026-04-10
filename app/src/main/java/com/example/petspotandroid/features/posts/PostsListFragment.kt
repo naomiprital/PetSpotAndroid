@@ -12,7 +12,6 @@ import android.widget.ArrayAdapter
 import android.widget.CheckedTextView
 import android.widget.EditText
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.widget.ListPopupWindow
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -49,9 +48,9 @@ class PostsListFragment : Fragment() {
         val recyclerView = view.findViewById<RecyclerView>(R.id.posts_recycler_view)
         val emptyStateText = view.findViewById<TextView>(R.id.empty_state_text)
 
-        adapter = PostsAdapter(emptyList()) { post ->
-            // TODO: open post information pop-up
-            Toast.makeText(context, "Post by ${post.lastSeenLocation}", Toast.LENGTH_SHORT).show()
+        adapter = PostsAdapter(emptyList()) { clickedPost ->
+            val dialog = PostDetailsDialog(clickedPost)
+            dialog.show(parentFragmentManager, "PostDetailsDialog")
         }
 
         recyclerView.adapter = adapter

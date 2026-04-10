@@ -19,6 +19,9 @@ interface PostDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(post: Post): Long
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertPosts(posts: List<Post>)
+
     @Delete
     suspend fun delete(post: Post): Int
 }

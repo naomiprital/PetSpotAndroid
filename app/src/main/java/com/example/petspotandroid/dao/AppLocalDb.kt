@@ -4,10 +4,12 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 import com.example.petspotandroid.data.models.Post
 import com.example.petspotandroid.data.models.User
 
-@Database(entities = [Post::class, User::class], version = 2, exportSchema = false)
+@Database(entities = [Post::class, User::class], version = 3, exportSchema = false)
+@TypeConverters(Converters::class)
 abstract class AppLocalDb : RoomDatabase() {
 
     abstract fun postDao(): PostDao
