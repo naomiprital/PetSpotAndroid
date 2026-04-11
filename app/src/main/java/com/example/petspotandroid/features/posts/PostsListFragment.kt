@@ -11,20 +11,28 @@ import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.CheckedTextView
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.widget.ListPopupWindow
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.petspotandroid.R
 import com.example.petspotandroid.adapter.PostsAdapter
+import com.example.petspotandroid.api.RetrofitInstance
 import com.example.petspotandroid.ui.NewReportDialog
 import com.example.petspotandroid.viewmodel.FilterType
 import com.example.petspotandroid.viewmodel.PostsViewModel
 import com.example.petspotandroid.viewmodel.SortOrder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import kotlinx.coroutines.launch
+import com.google.firebase.firestore.FirebaseFirestore
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class PostsListFragment : Fragment() {
 
@@ -75,6 +83,8 @@ class PostsListFragment : Fragment() {
             val dialog = NewReportDialog()
             dialog.show(parentFragmentManager, "NewReportDialog")
         }
+
+        fetchPetFact(view)
     }
 
     private fun setupFilterUI(view: View) {
@@ -183,5 +193,66 @@ class PostsListFragment : Fragment() {
                 popup.show()
             }
         }
+    }
+
+    private fun fetchPetFact(view: View) {
+        val skeletonView = view.findViewById<View>(R.id.skeleton_view)
+        val factTextView = view.findViewById<TextView>(R.id.fact_text_view)
+        val factCardWrapper = view.findViewById<View>(R.id.fact_card_include)
+        val closeButton = view.findViewById<ImageView>(R.id.close_fact_button)
+
+        closeButton.setOnClickListener {
+            factCardWrapper.animate().alpha(0f).setDuration(200).withEndAction {
+                factCardWrapper.visibility = View.GONE
+            }.start()
+        }
+
+        val todayDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+        val db = FirebaseFirestore.getInstance()
+        val dailyFactRef = db.collection("system_data").document("daily_fact")
+
+        dailyFactRef.get().addOnSuccessListener { document ->
+            val savedDate = document.getString("date")
+            val savedFact = document.getString("fact")
+
+            if (savedDate == todayDate && savedFact != null) {
+                showFactAnimation(skeletonView, factTextView, savedFact)
+            } else {
+                viewLifecycleOwner.lifecycleScope.launch {
+                    try {
+                        val supportedAnimals = resources.getStringArray(R.array.supported_api_animals).toList()
+                        val randomAnimal = supportedAnimals.random()
+
+                        val response = RetrofitInstance.api.getFact(randomAnimal)
+
+                        val newFactData = mapOf(
+                            "date" to todayDate,
+                            "fact" to response.fact
+                        )
+                        dailyFactRef.set(newFactData)
+
+                        showFactAnimation(skeletonView, factTextView, response.fact)
+
+                    } catch (e: Exception) {
+                        factCardWrapper.visibility = View.GONE
+                    }
+                }
+            }
+        }.addOnFailureListener {
+            factCardWrapper.visibility = View.GONE
+        }
+    }
+
+    private fun showFactAnimation(skeletonView: View, factTextView: TextView, factText: String) {
+        skeletonView.animate()
+            .alpha(0f)
+            .setDuration(300)
+            .withEndAction {
+                skeletonView.visibility = View.GONE
+                factTextView.text = factText
+                factTextView.alpha = 0f
+                factTextView.visibility = View.VISIBLE
+                factTextView.animate().alpha(1f).setDuration(300).start()
+            }.start()
     }
 }
