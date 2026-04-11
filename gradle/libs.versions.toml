@@ -1,5 +1,5 @@
 [versions]
-agp = "9.1.0"
+agp = "9.0.0"
 kotlin = "2.1.0"
 ksp = "2.1.0-1.0.29"
 room = "2.7.0-alpha11"
@@ -16,6 +16,7 @@ picasso = "2.8"
 navigation = "2.9.6"
 googleServices = "4.4.2"
 firebaseBom = "34.7.0"
+gson = "2.10.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -33,6 +34,7 @@ firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "fir
 firebase-auth = { module = "com.google.firebase:firebase-auth" }
 firebase-firestore = { module = "com.google.firebase:firebase-firestore" }
 firebase-storage = { module = "com.google.firebase:firebase-storage" }
+gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 
 # Room Libraries
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
