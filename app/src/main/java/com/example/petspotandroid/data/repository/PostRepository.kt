@@ -37,6 +37,10 @@ class PostRepository(private val postDao: PostDao) {
         }
     }
 
+    fun getPostsByUser(userId: String): LiveData<List<Post>> {
+        return postDao.getPostsByUser(userId)
+    }
+
     fun refreshPosts() {
         postsCollection.get().addOnSuccessListener { snapshot ->
             val remotePosts = snapshot.toObjects(Post::class.java)
