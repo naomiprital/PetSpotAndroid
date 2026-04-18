@@ -1,6 +1,5 @@
 package com.example.petspotandroid.data.repository
 
-import android.util.Log
 import androidx.lifecycle.LiveData
 import com.example.petspotandroid.dao.PostDao
 import com.example.petspotandroid.data.models.Post
@@ -8,6 +7,8 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 
 class PostRepository(private val postDao: PostDao) {
 
@@ -19,17 +20,12 @@ class PostRepository(private val postDao: PostDao) {
     init {
         listenForPosts()
     }
-
     private fun listenForPosts() {
         postsCollection.addSnapshotListener { snapshot, error ->
-            if (error != null) {
-                Log.w("PostRepository", "Listen failed.", error)
-                return@addSnapshotListener
-            }
+            if (error != null) return@addSnapshotListener
 
             if (snapshot != null) {
                 val remotePosts = snapshot.toObjects(Post::class.java)
-
                 CoroutineScope(Dispatchers.IO).launch {
                     postDao.insertPosts(remotePosts)
                 }
@@ -37,51 +33,60 @@ class PostRepository(private val postDao: PostDao) {
         }
     }
 
-    fun getPostsByUser(userId: String): LiveData<List<Post>> {
-        return postDao.getPostsByUser(userId)
-    }
-
-    fun refreshPosts() {
-        postsCollection.get().addOnSuccessListener { snapshot ->
+    suspend fun refreshPosts(): Result<Boolean> {
+        return try {
+            val snapshot = postsCollection.get().await()
             val remotePosts = snapshot.toObjects(Post::class.java)
-            CoroutineScope(Dispatchers.IO).launch {
+
+            withContext(Dispatchers.IO) {
                 postDao.insertPosts(remotePosts)
             }
-        }.addOnFailureListener { e ->
-            Log.e("PostRepository", "Failed to refresh posts", e)
+
+            Result.success(true)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 
-    fun addPost(post: Post, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
-        postsCollection.document(post.id).set(post)
-            .addOnSuccessListener {
-                CoroutineScope(Dispatchers.IO).launch {
-                    postDao.insertPosts(listOf(post))
-                }
-                onSuccess()
+    suspend fun addPost(post: Post): Result<Boolean> {
+        return try {
+            postsCollection.document(post.id).set(post).await()
+
+            withContext(Dispatchers.IO) {
+                postDao.insertPosts(listOf(post))
             }
-            .addOnFailureListener { e -> onFailure(e) }
+
+            Result.success(true)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
-    fun updatePost(post: Post, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
-        postsCollection.document(post.id).set(post)
-            .addOnSuccessListener {
-                CoroutineScope(Dispatchers.IO).launch {
-                    postDao.insertPosts(listOf(post))
-                }
-                onSuccess()
+    suspend fun updatePost(post: Post): Result<Boolean> {
+        return try {
+            postsCollection.document(post.id).set(post).await()
+
+            withContext(Dispatchers.IO) {
+                postDao.insertPosts(listOf(post))
             }
-            .addOnFailureListener { e -> onFailure(e) }
+
+            Result.success(true)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
-    fun deletePost(post: Post, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
-        postsCollection.document(post.id).delete()
-            .addOnSuccessListener {
-                CoroutineScope(Dispatchers.IO).launch {
-                    postDao.delete(post)
-                }
-                onSuccess()
+    suspend fun deletePost(post: Post): Result<Boolean> {
+        return try {
+            postsCollection.document(post.id).delete().await()
+
+            withContext(Dispatchers.IO) {
+                postDao.delete(post)
             }
-            .addOnFailureListener { e -> onFailure(e) }
+
+            Result.success(true)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }

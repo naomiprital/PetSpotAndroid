@@ -1,14 +1,15 @@
 package com.example.petspotandroid.viewmodel
 
 import android.app.Application
-import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.map
+import androidx.lifecycle.viewModelScope
 import com.example.petspotandroid.dao.AppLocalDb
 import com.example.petspotandroid.data.models.Post
 import com.example.petspotandroid.data.repository.PostRepository
+import kotlinx.coroutines.launch
 
 enum class FilterType { ALL, LOST, FOUND }
 enum class SortOrder { NEWEST_FIRST, OLDEST_FIRST }
@@ -34,43 +35,50 @@ class PostsViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-
     fun refreshPosts() {
-        repository.refreshPosts()
+        viewModelScope.launch {
+            repository.refreshPosts()
+        }
     }
 
-
-    fun addPost(post: Post) {
-        repository.addPost(
-            post,
-            onSuccess = { Log.d("PostsViewModel", "Post saved to Firebase & Room!") },
-            onFailure = { e -> Log.e("PostsViewModel", "Failed to save post", e) }
-        )
+    fun addPost(post: Post, onResult: (Boolean, String) -> Unit = { _, _ -> }) {
+        viewModelScope.launch {
+            val result = repository.addPost(post)
+            if (result.isSuccess) {
+                onResult(true, "Post published successfully!")
+            } else {
+                onResult(false, "Failed to publish. Please try again.")
+            }
+        }
     }
 
-    fun updatePost(post: Post) {
-        repository.updatePost(
-            post,
-            onSuccess = { Log.d("PostsViewModel", "Post updated!") },
-            onFailure = { e -> Log.e("PostsViewModel", "Failed to update post", e) }
-        )
+    fun updatePost(post: Post, onResult: (Boolean, String) -> Unit = { _, _ -> }) {
+        viewModelScope.launch {
+            val result = repository.updatePost(post)
+            if (result.isSuccess) {
+                onResult(true, "Post updated!")
+            } else {
+                onResult(false, "Failed to update post.")
+            }
+        }
     }
 
-    fun deletePost(post: Post) {
-        repository.deletePost(
-            post,
-            onSuccess = { Log.d("PostsViewModel", "Post deleted!") },
-            onFailure = { e -> Log.e("PostsViewModel", "Failed to delete post", e) }
-        )
+    fun deletePost(post: Post, onResult: (Boolean, String) -> Unit = { _, _ -> }) {
+        viewModelScope.launch {
+            val result = repository.deletePost(post)
+            if (result.isSuccess) {
+                onResult(true, "Post deleted!")
+            } else {
+                onResult(false, "Failed to delete post.")
+            }
+        }
     }
-
 
     fun getMyPosts(userId: String): LiveData<List<Post>> {
         return repository.allPosts.map { posts ->
             posts.filter { it.authorId == userId }
         }
     }
-
 
     fun updateFilters(type: FilterType, animal: String?, sort: SortOrder) {
         currentType = type
