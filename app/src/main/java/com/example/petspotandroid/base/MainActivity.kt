@@ -155,7 +155,6 @@ class MainActivity : AppCompatActivity() {
             btnLogout.setOnClickListener {
                 popupWindow.dismiss()
                 authViewModel.logout()
-                ToastHelper.showCustomToast(anchorView, "Logged out successfully")
                 if (navController.currentDestination?.id != R.id.authFragment) {
                     navController.navigate(R.id.action_global_authFragment)
                 }

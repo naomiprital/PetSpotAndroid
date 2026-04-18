@@ -70,6 +70,9 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.auth)
     implementation(libs.firebase.storage)
+    
+    implementation(libs.gms.play.services.base)
+    implementation(libs.gms.play.services.auth)
 
     implementation("com.google.code.gson:gson:2.10.1")
 }
