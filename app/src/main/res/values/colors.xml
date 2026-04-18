@@ -16,7 +16,12 @@
     <color name="divider">#EEEEEE</color>
     <color name="navigate_button">#546E7A</color>
     <color name="logout">#E53935</color>
+    <color name="reunions">#43A047</color>
+    <color name="list_counter">#FFE0B2</color>
     <color name="launcher_background">#3DDC84</color>
     <color name="launcher_line">#33FFFFFF</color>
     <color name="comment_gray">#F5F6F8</color>
+    <color name="edit_mode_image_background">#66000000</color>
+    <color name="edit_profile_button">#455A64</color>
+    <color name="cancel_edit_profile_button">#ECEFF1</color>
 </resources>
