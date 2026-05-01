@@ -29,7 +29,6 @@ import com.example.petspotandroid.viewmodel.PostsViewModel
 import com.example.petspotandroid.viewmodel.SortOrder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.launch
-import com.google.firebase.firestore.FirebaseFirestore
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -196,8 +195,6 @@ class PostsListFragment : Fragment() {
     }
 
     private fun fetchPetFact(view: View) {
-        val skeletonView = view.findViewById<View>(R.id.skeleton_view)
-        val factTextView = view.findViewById<TextView>(R.id.fact_text_view)
         val factCardWrapper = view.findViewById<View>(R.id.fact_card_include)
         val closeButton = view.findViewById<ImageView>(R.id.close_fact_button)
 
@@ -207,40 +204,20 @@ class PostsListFragment : Fragment() {
             }.start()
         }
 
-        val todayDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-        val db = FirebaseFirestore.getInstance()
-        val dailyFactRef = db.collection("system_data").document("daily_fact")
+        viewModel.dailyFact.observe(viewLifecycleOwner) { fact ->
+            val factCardWrapper = view.findViewById<View>(R.id.fact_card_include)
+            val skeletonView = view.findViewById<View>(R.id.skeleton_view)
+            val factTextView = view.findViewById<TextView>(R.id.fact_text_view)
 
-        dailyFactRef.get().addOnSuccessListener { document ->
-            val savedDate = document.getString("date")
-            val savedFact = document.getString("fact")
-
-            if (savedDate == todayDate && savedFact != null) {
-                showFactAnimation(skeletonView, factTextView, savedFact)
+            if (fact != null) {
+                showFactAnimation(skeletonView, factTextView, fact)
             } else {
-                viewLifecycleOwner.lifecycleScope.launch {
-                    try {
-                        val supportedAnimals = resources.getStringArray(R.array.supported_api_animals).toList()
-                        val randomAnimal = supportedAnimals.random()
-
-                        val response = RetrofitInstance.api.getFact(randomAnimal)
-
-                        val newFactData = mapOf(
-                            "date" to todayDate,
-                            "fact" to response.fact
-                        )
-                        dailyFactRef.set(newFactData)
-
-                        showFactAnimation(skeletonView, factTextView, response.fact)
-
-                    } catch (e: Exception) {
-                        factCardWrapper.visibility = View.GONE
-                    }
-                }
+                factCardWrapper.visibility = View.GONE
             }
-        }.addOnFailureListener {
-            factCardWrapper.visibility = View.GONE
         }
+
+        val supportedAnimals = resources.getStringArray(R.array.supported_api_animals).toList()
+        viewModel.loadDailyFact(supportedAnimals)
     }
 
     private fun showFactAnimation(skeletonView: View, factTextView: TextView, factText: String) {
