@@ -155,23 +155,31 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
     }
 
     fun resetPassword(email: String) {
-        if (email.isBlank()) {
-            _errorMessage.value = "Please enter your email address"
-            return
-        }
-
         _isLoading.value = true
+        _errorMessage.value = null
 
         viewModelScope.launch {
-            val result = repository.resetPassword(email)
-            _isLoading.value = false
+            val checkResult = repository.checkEmailExists(email)
 
-            result.onSuccess {
-                _resetPasswordSuccess.value = true
-            }.onFailure { exception ->
-                _errorMessage.value = exception.message ?: "Failed to send reset email"
-                _resetPasswordSuccess.value = false
+            if (checkResult.isSuccess) {
+                val emailExists = checkResult.getOrNull() == true
+
+                if (emailExists) {
+                    val resetResult = repository.resetPassword(email)
+
+                    if (resetResult.isSuccess) {
+                        _resetPasswordSuccess.postValue(true)
+                    } else {
+                        _errorMessage.postValue("Failed to send reset link: ${resetResult.exceptionOrNull()?.message}")
+                    }
+                } else {
+                    _errorMessage.postValue("No account found with this email address.")
+                }
+            } else {
+                _errorMessage.postValue("Error checking account: ${checkResult.exceptionOrNull()?.message}")
             }
+
+            _isLoading.value = false
         }
     }
 }

@@ -16,6 +16,9 @@
             app:destination="@id/postsListFragment"
             app:popUpTo="@id/authFragment"
             app:popUpToInclusive="true" />
+        <action
+            android:id="@+id/action_authFragment_to_forgotPasswordFragment"
+            app:destination="@id/forgotPasswordFragment" />
     </fragment>
 
     <fragment
@@ -45,4 +48,8 @@
         app:destination="@id/postsListFragment"
         app:popUpTo="@id/nav_graph"
         app:popUpToInclusive="true" />
+    <fragment
+        android:id="@+id/forgotPasswordFragment"
+        android:name="com.example.petspotandroid.features.authentication.ForgotPasswordFragment"
+        android:label="ForgotPasswordFragment" />
 </navigation>
