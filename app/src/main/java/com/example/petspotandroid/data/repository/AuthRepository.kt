@@ -83,8 +83,8 @@ class AuthRepository(private val userDao: UserDao) {
             }
 
             Result.success(updatedUser)
-        } catch (e: Exception) {
-            Result.failure(e)
+        } catch (exception: Exception) {
+            Result.failure(exception)
         }
     }
 
@@ -102,8 +102,8 @@ class AuthRepository(private val userDao: UserDao) {
             getUserData(firebaseUser.uid)
 
             Result.success(firebaseUser)
-        } catch (e: Exception) {
-            Result.failure(e)
+        } catch (exception: Exception) {
+            Result.failure(exception)
         }
     }
 
@@ -125,12 +125,12 @@ class AuthRepository(private val userDao: UserDao) {
                     Result.failure(Exception("User data not found in Firestore or Local DB"))
                 }
             }
-        } catch (e: Exception) {
+        } catch (exception: Exception) {
             val localUser = withContext(Dispatchers.IO) { userDao.getUserById(userId) }
             if (localUser != null) {
                 Result.success(localUser)
             } else {
-                Result.failure(e)
+                Result.failure(exception)
             }
         }
     }
