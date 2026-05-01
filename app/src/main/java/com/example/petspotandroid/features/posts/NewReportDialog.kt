@@ -20,7 +20,7 @@ import com.example.petspotandroid.R
 import com.example.petspotandroid.data.models.Post
 import com.example.petspotandroid.viewmodel.PostsViewModel
 import com.example.petspotandroid.viewmodel.AuthViewModel
-import com.example.petspotandroid.data.firebase.FirebaseStorageModel // Added Import
+import com.example.petspotandroid.data.firebase.FirebaseStorageModel
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.datepicker.MaterialDatePicker

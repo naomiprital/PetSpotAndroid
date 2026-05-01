@@ -87,6 +87,7 @@ class PostDetailsDialog(private val post: Post) : DialogFragment() {
                 .load(post.imageUrl)
                 .fit()
                 .centerCrop()
+                .placeholder(android.R.drawable.ic_menu_camera)
                 .error(android.R.drawable.ic_menu_camera)
                 .into(postImage)
         } else {
