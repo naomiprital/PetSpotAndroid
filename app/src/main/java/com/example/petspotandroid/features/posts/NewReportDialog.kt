@@ -1,5 +1,6 @@
 package com.example.petspotandroid.ui
 
+import android.annotation.SuppressLint
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -19,6 +20,7 @@ import com.example.petspotandroid.R
 import com.example.petspotandroid.data.models.Post
 import com.example.petspotandroid.viewmodel.PostsViewModel
 import com.example.petspotandroid.viewmodel.AuthViewModel
+import com.example.petspotandroid.data.firebase.FirebaseStorageModel // Added Import
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.datepicker.MaterialDatePicker
@@ -62,6 +64,7 @@ class NewReportDialog : DialogFragment() {
         return inflater.inflate(R.layout.fragment_new_report, container, false)
     }
 
+    @SuppressLint("SetTextI18n")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -139,7 +142,6 @@ class NewReportDialog : DialogFragment() {
             val locationString = view.findViewById<TextInputEditText>(R.id.location).text.toString()
             val dateTimeString = dateTime.text.toString()
             val descriptionString = view.findViewById<TextInputEditText>(R.id.description).text.toString()
-            val imageString = selectedImageUri?.toString() ?: ""
 
             if (locationString.isBlank() || descriptionString.isBlank() || contact.isBlank()) {
                 Toast.makeText(requireContext(), getString(R.string.error_missing_fields), Toast.LENGTH_SHORT).show()
@@ -155,27 +157,47 @@ class NewReportDialog : DialogFragment() {
                 return@setOnClickListener
             }
 
+            publishButton.isEnabled = false
+            publishButton.text = "Publishing..."
+
+            val newPostId = UUID.randomUUID().toString()
             val authorName = "${currentUserData.firstName} ${currentUserData.lastName}"
 
-            val newPost = Post(
-                id = UUID.randomUUID().toString(),
-                authorId = currentUserId,
-                userName = authorName,
-                authorProfileImageUrl = profilePicUrl,
-                isLost = isLost,
-                petType = animalType,
-                contactNumber = contact,
-                lastSeenLocation = locationString,
-                eventDate = dateTimeString,
-                createdAt = System.currentTimeMillis(),
-                imageUrl = imageString,
-                description = descriptionString
-            )
+            val createAndSavePost = { finalImageUrl: String ->
+                val newPost = Post(
+                    id = newPostId,
+                    authorId = currentUserId,
+                    userName = authorName,
+                    authorProfileImageUrl = profilePicUrl,
+                    isLost = isLost,
+                    petType = animalType,
+                    contactNumber = contact,
+                    lastSeenLocation = locationString,
+                    eventDate = dateTimeString,
+                    createdAt = System.currentTimeMillis(),
+                    imageUrl = finalImageUrl,
+                    description = descriptionString
+                )
 
-            postsViewModel.addPost(newPost)
+                postsViewModel.addPost(newPost)
+                Toast.makeText(requireContext(), getString(R.string.report_published), Toast.LENGTH_SHORT).show()
+                dismiss()
+            }
 
-            Toast.makeText(requireContext(), getString(R.string.report_published), Toast.LENGTH_SHORT).show()
-            dismiss()
+            if (selectedImageUri != null) {
+                val storageModel = FirebaseStorageModel()
+                storageModel.uploadPostImage(selectedImageUri!!, newPostId) { uploadedUrl ->
+                    if (uploadedUrl != null) {
+                        createAndSavePost(uploadedUrl)
+                    } else {
+                        publishButton.isEnabled = true
+                        publishButton.text = getString(R.string.publish_report)
+                        Toast.makeText(requireContext(), "Failed to upload image. Please try again.", Toast.LENGTH_LONG).show()
+                    }
+                }
+            } else {
+                createAndSavePost("")
+            }
         }
     }
 

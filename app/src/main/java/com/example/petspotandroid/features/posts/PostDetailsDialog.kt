@@ -43,44 +43,55 @@ class PostDetailsDialog(private val post: Post) : DialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        view.findViewById<ImageButton>(R.id.closeButton).setOnClickListener {
-            dismiss()
-        }
-
-        view.findViewById<TextView>(R.id.posterName).text = post.userName
+        val closeButton = view.findViewById<ImageButton>(R.id.closeButton)
+        val posterName = view.findViewById<TextView>(R.id.posterName)
         val listerInfoButton = view.findViewById<TextView>(R.id.listerInfoTitle)
-        listerInfoButton.setOnClickListener {
-            Toast.makeText(requireContext(), "Navigating to profile of ${post.userName}...", Toast.LENGTH_SHORT).show()
+        val locationText = view.findViewById<TextView>(R.id.locationText)
+        val seenOnText = view.findViewById<TextView>(R.id.seenOnText)
+        val descriptionText = view.findViewById<TextView>(R.id.descriptionText)
+        val postedDate = view.findViewById<TextView>(R.id.postedDate)
+        val statusBadge = view.findViewById<TextView>(R.id.statusBadge)
+        val postImage = view.findViewById<ImageView>(R.id.postImage)
+        val profileImageView = view.findViewById<ImageView>(R.id.userProfileImage)
+        val callButton = view.findViewById<MaterialButton>(R.id.callButton)
 
-            // TODO: Use Nav Graph to go to Profile Fragment
+        closeButton.setOnClickListener { dismiss() }
+
+        posterName.text = post.userName
+        listerInfoButton.setOnClickListener {
+            Toast.makeText(requireContext(), "Profile feature coming soon!", Toast.LENGTH_SHORT).show()
         }
-        view.findViewById<TextView>(R.id.locationText).text = post.lastSeenLocation
-        view.findViewById<TextView>(R.id.seenOnText).text = post.eventDate
-        view.findViewById<TextView>(R.id.descriptionText).text = post.description
+
+        locationText.text = post.lastSeenLocation
+        seenOnText.text = post.eventDate
+        descriptionText.text = post.description
 
         val postedFormat = SimpleDateFormat("'Posted' dd/MM/yyyy", Locale.getDefault())
-        view.findViewById<TextView>(R.id.postedDate).text = postedFormat.format(Date(post.createdAt))
+        postedDate.text = postedFormat.format(Date(post.createdAt))
 
-        val statusBadge = view.findViewById<TextView>(R.id.statusBadge)
         val badgeTextId = if (post.isLost) R.string.lost else R.string.found
         val badgeColorId = if (post.isLost) R.color.status_lost else R.color.status_found
+        val color = ContextCompat.getColor(requireContext(), badgeColorId)
 
-        statusBadge.text = getString(badgeTextId) + " " + post.petType
-        statusBadge.setTextColor(ContextCompat.getColor(requireContext(), badgeColorId))
-        statusBadge.background.mutate().setTint(ContextCompat.getColor(requireContext(), badgeColorId))
-        statusBadge.background.alpha = 50
+        statusBadge.text = "${getString(badgeTextId)} ${post.petType}"
+        statusBadge.setTextColor(color)
 
-        val postImage = view.findViewById<ImageView>(R.id.postImage)
+        statusBadge.background?.mutate()?.let {
+            it.setTint(color)
+            it.alpha = 40
+        }
+
+
         if (post.imageUrl.isNotEmpty()) {
             Picasso.get()
                 .load(post.imageUrl)
                 .fit()
                 .centerCrop()
-                .placeholder(android.R.drawable.ic_menu_camera)
+                .error(android.R.drawable.ic_menu_camera)
                 .into(postImage)
+        } else {
+            postImage.setImageResource(android.R.drawable.ic_menu_camera)
         }
-
-        val profileImageView = view.findViewById<ImageView>(R.id.userProfileImage)
 
         if (post.authorProfileImageUrl.isNotEmpty()) {
             Picasso.get()
@@ -94,14 +105,13 @@ class PostDetailsDialog(private val post: Post) : DialogFragment() {
             profileImageView.setImageResource(R.drawable.ic_person)
         }
 
-        val callButton = view.findViewById<MaterialButton>(R.id.callButton)
-            callButton.text = getString(R.string.call_lister, post.contactNumber)
-            callButton.setOnClickListener {
-                val dialIntent = Intent(Intent.ACTION_DIAL).apply {
-                    data = "tel:${post.contactNumber}".toUri()
-                }
-                startActivity(dialIntent)
+        callButton.text = getString(R.string.call_lister, post.contactNumber)
+        callButton.setOnClickListener {
+            val dialIntent = Intent(Intent.ACTION_DIAL).apply {
+                data = "tel:${post.contactNumber}".toUri()
             }
+            startActivity(dialIntent)
+        }
 
         val authViewModel = ViewModelProvider(requireActivity())[AuthViewModel::class.java]
         val postsViewModel = ViewModelProvider(requireActivity())[PostsViewModel::class.java]
