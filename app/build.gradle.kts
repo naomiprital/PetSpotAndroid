@@ -66,9 +66,13 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.auth)
     implementation(libs.firebase.storage)
-    
+
     implementation(libs.gms.play.services.base)
     implementation(libs.gms.play.services.auth)
 
     implementation(libs.gson)
+}
+    implementation(libs.gson)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.gson)
 }

@@ -11,20 +11,27 @@ import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.CheckedTextView
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.widget.ListPopupWindow
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.petspotandroid.R
 import com.example.petspotandroid.adapter.PostsAdapter
+import com.example.petspotandroid.api.RetrofitInstance
 import com.example.petspotandroid.ui.NewReportDialog
 import com.example.petspotandroid.viewmodel.FilterType
 import com.example.petspotandroid.viewmodel.PostsViewModel
 import com.example.petspotandroid.viewmodel.SortOrder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class PostsListFragment : Fragment() {
 
@@ -75,6 +82,8 @@ class PostsListFragment : Fragment() {
             val dialog = NewReportDialog()
             dialog.show(parentFragmentManager, "NewReportDialog")
         }
+
+        fetchPetFact(view)
     }
 
     private fun setupFilterUI(view: View) {
@@ -183,5 +192,44 @@ class PostsListFragment : Fragment() {
                 popup.show()
             }
         }
+    }
+
+    private fun fetchPetFact(view: View) {
+        val factCardWrapper = view.findViewById<View>(R.id.fact_card_include)
+        val closeButton = view.findViewById<ImageView>(R.id.close_fact_button)
+
+        closeButton.setOnClickListener {
+            factCardWrapper.animate().alpha(0f).setDuration(200).withEndAction {
+                factCardWrapper.visibility = View.GONE
+            }.start()
+        }
+
+        viewModel.dailyFact.observe(viewLifecycleOwner) { fact ->
+            val factCardWrapper = view.findViewById<View>(R.id.fact_card_include)
+            val skeletonView = view.findViewById<View>(R.id.skeleton_view)
+            val factTextView = view.findViewById<TextView>(R.id.fact_text_view)
+
+            if (fact != null) {
+                showFactAnimation(skeletonView, factTextView, fact)
+            } else {
+                factCardWrapper.visibility = View.GONE
+            }
+        }
+
+        val supportedAnimals = resources.getStringArray(R.array.supported_api_animals).toList()
+        viewModel.loadDailyFact(supportedAnimals)
+    }
+
+    private fun showFactAnimation(skeletonView: View, factTextView: TextView, factText: String) {
+        skeletonView.animate()
+            .alpha(0f)
+            .setDuration(300)
+            .withEndAction {
+                skeletonView.visibility = View.GONE
+                factTextView.text = factText
+                factTextView.alpha = 0f
+                factTextView.visibility = View.VISIBLE
+                factTextView.animate().alpha(1f).setDuration(300).start()
+            }.start()
     }
 }
