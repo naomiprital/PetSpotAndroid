@@ -14,7 +14,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class CommentsAdapter(private var comments: List<Comment>) :
+class CommentsAdapter(private var comments: List<Comment>, private val onCommenterClick: (String) -> Unit) :
     RecyclerView.Adapter<CommentsAdapter.CommentViewHolder>() {
 
     @SuppressLint("NotifyDataSetChanged")
@@ -30,6 +30,13 @@ class CommentsAdapter(private var comments: List<Comment>) :
     }
 
     override fun onBindViewHolder(holder: CommentViewHolder, position: Int) {
+        val comment = comments[position]
+        holder.itemView.findViewById<TextView>(R.id.commentAuthorName).setOnClickListener {
+            onCommenterClick(comment.authorId)
+        }
+        holder.itemView.findViewById<ImageView>(R.id.commentAvatar).setOnClickListener {
+            onCommenterClick(comment.authorId)
+        }
         holder.bind(comments[position])
     }
 

@@ -90,6 +90,10 @@
     <string name="didn_t_receive_the_email">Didn\'t receive the email?</string>
     <string name="resend">Resend.</string>
     <string name="back_to_login">Back to Login</string>
+    <string name="user_avatar">user avatar</string>
+    <string name="contact_info">CONTACT INFO</string>
+    <string name="email_icon">email icon</string>
+    <string name="phone_icon">phone icon</string>
 
     <string name="edit">Edit</string>
     <string name="delete">Delete</string>
