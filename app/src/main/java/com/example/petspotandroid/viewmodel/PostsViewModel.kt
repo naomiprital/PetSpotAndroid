@@ -7,6 +7,7 @@ import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
+import com.example.petspotandroid.R
 import com.example.petspotandroid.dao.AppLocalDb
 import com.example.petspotandroid.data.models.Post
 import com.example.petspotandroid.data.repository.FactRepository
@@ -47,35 +48,35 @@ class PostsViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun addPost(post: Post, onResult: (Boolean, String) -> Unit = { _, _ -> }) {
+    fun addPost(post: Post, onResult: (Boolean, Int) -> Unit = { _, _ -> }) {
         viewModelScope.launch {
             val result = repository.addPost(post)
             if (result.isSuccess) {
-                onResult(true, "Post published successfully!")
+                onResult(true, R.string.report_published)
             } else {
-                onResult(false, "Failed to publish. Please try again.")
+                onResult(false, R.string.failed_to_publish)
             }
         }
     }
 
-    fun updatePost(post: Post, onResult: (Boolean, String) -> Unit = { _, _ -> }) {
+    fun updatePost(post: Post, onResult: (Boolean, Int) -> Unit = { _, _ -> }) {
         viewModelScope.launch {
             val result = repository.updatePost(post)
             if (result.isSuccess) {
-                onResult(true, "Post updated!")
+                onResult(true, R.string.report_updated)
             } else {
-                onResult(false, "Failed to update post.")
+                onResult(false, R.string.failed_to_update)
             }
         }
     }
 
-    fun deletePost(post: Post, onResult: (Boolean, String) -> Unit = { _, _ -> }) {
+    fun deletePost(post: Post, onResult: (Boolean, Int) -> Unit = { _, _ -> }) {
         viewModelScope.launch {
             val result = repository.deletePost(post)
             if (result.isSuccess) {
-                onResult(true, "Post deleted!")
+                onResult(true, R.string.report_deleted)
             } else {
-                onResult(false, "Failed to delete post.")
+                onResult(false, R.string.failed_to_delete)
             }
         }
     }

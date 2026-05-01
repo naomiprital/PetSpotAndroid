@@ -1,5 +1,6 @@
 package com.example.petspotandroid.ui
 
+import android.content.res.ColorStateList
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -13,6 +14,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.ViewModelProvider
 import com.example.petspotandroid.R
@@ -32,7 +34,22 @@ import java.util.UUID
 
 class NewReportDialog : DialogFragment() {
 
+    companion object {
+        private const val ARG_POST = "arg_post"
+
+        fun newInstance(post: Post? = null): NewReportDialog {
+            val fragment = NewReportDialog()
+            post?.let {
+                val args = Bundle()
+                args.putSerializable(ARG_POST, it)
+                fragment.arguments = args
+            }
+            return fragment
+        }
+    }
+
     private var selectedImageUri: Uri? = null
+    private var editingPost: Post? = null
 
     private lateinit var postsViewModel: PostsViewModel
     private lateinit var authViewModel: AuthViewModel
@@ -44,15 +61,14 @@ class NewReportDialog : DialogFragment() {
         if (uri != null) {
             selectedImageUri = uri
             uploadText?.text = getString(R.string.photo_selected)
-            uploadText?.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.status_found))
-            cameraIcon?.imageTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.BLACK)
-        } else {
-            selectedImageUri = null
-            uploadText?.text = getString(R.string.upload_photo)
-            val defaultColor = androidx.core.content.ContextCompat.getColor(requireContext(), R.color.gray_text)
-            uploadText?.setTextColor(defaultColor)
-            cameraIcon?.imageTintList = android.content.res.ColorStateList.valueOf(defaultColor)
+            uploadText?.setTextColor(ContextCompat.getColor(requireContext(), R.color.status_found))
+            cameraIcon?.imageTintList = ColorStateList.valueOf(android.graphics.Color.BLACK)
         }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        editingPost = arguments?.getSerializable(ARG_POST) as? Post
     }
 
     override fun onCreateView(
@@ -68,6 +84,7 @@ class NewReportDialog : DialogFragment() {
         postsViewModel = ViewModelProvider(requireActivity())[PostsViewModel::class.java]
         authViewModel = ViewModelProvider(requireActivity())[AuthViewModel::class.java]
 
+        val dialogTitle = view.findViewById<TextView>(R.id.dialogTitle)
         val closeButton = view.findViewById<ImageButton>(R.id.closeButton)
         closeButton.setOnClickListener { dismiss() }
 
@@ -75,38 +92,62 @@ class NewReportDialog : DialogFragment() {
         val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, animalTypes)
         val dropdownAnimalType = view.findViewById<AutoCompleteTextView>(R.id.dropdownAnimalType)
         dropdownAnimalType.setAdapter(adapter)
-        dropdownAnimalType.setText(animalTypes[0], false)
-
+        
         val toggleGroup = view.findViewById<MaterialButtonToggleGroup>(R.id.toggleGroupListingType)
         val lostButton = view.findViewById<MaterialButton>(R.id.lostButton)
         val foundButton = view.findViewById<MaterialButton>(R.id.foundButton)
 
-        val lostColor = android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.status_lost))
-        val foundColor = android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.status_found))
-        val grayTextColor = android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.gray_text))
+        val lostColor = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.status_lost))
+        val foundColor = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.status_found))
+        val grayTextColor = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.gray_text))
 
-        toggleGroup.check(R.id.lostButton)
-        lostButton.strokeColor = lostColor
-        lostButton.setTextColor(lostColor)
-        foundButton.strokeColor = grayTextColor
-        foundButton.setTextColor(grayTextColor)
+        val contactInput = view.findViewById<TextInputEditText>(R.id.contactNumber)
+        val locationInput = view.findViewById<TextInputEditText>(R.id.location)
+        val dateTime = view.findViewById<TextInputEditText>(R.id.dateTime)
+        val descriptionInput = view.findViewById<TextInputEditText>(R.id.description)
+        val publishButton = view.findViewById<MaterialButton>(R.id.publishButton)
+        val uploadText = view.findViewById<TextView>(R.id.uploadText)
+        val cameraIcon = view.findViewById<ImageView>(R.id.cameraIcon)
+
+        val dateTimeFormat = getString(R.string.date_format_with_at)
+
+        if (editingPost != null) {
+            val post = editingPost!!
+            dialogTitle.text = getString(R.string.edit_report)
+            publishButton.text = getString(R.string.save_changes)
+            
+            toggleGroup.check(if (post.isLost) R.id.lostButton else R.id.foundButton)
+            dropdownAnimalType.setText(post.petType, false)
+            contactInput.setText(post.contactNumber)
+            locationInput.setText(post.lastSeenLocation)
+            dateTime.setText(post.eventDate)
+            descriptionInput.setText(post.description)
+            
+            if (post.imageUrl.isNotEmpty()) {
+                uploadText.text = getString(R.string.photo_selected)
+                uploadText.setTextColor(ContextCompat.getColor(requireContext(), R.color.status_found))
+                cameraIcon.imageTintList = ColorStateList.valueOf(android.graphics.Color.BLACK)
+            }
+        } else {
+            toggleGroup.check(R.id.lostButton)
+            dropdownAnimalType.setText(animalTypes[0], false)
+            
+            val currentCalendar = Calendar.getInstance()
+            val defaultFormat = SimpleDateFormat(dateTimeFormat, Locale.getDefault())
+            dateTime.setText(defaultFormat.format(currentCalendar.time))
+
+            authViewModel.userData.observe(viewLifecycleOwner) { user ->
+                if (user != null && contactInput.text.isNullOrBlank()) {
+                    contactInput.setText(user.phone)
+                }
+            }
+        }
+
+        updateToggleColors(toggleGroup.checkedButtonId, lostButton, foundButton, lostColor, foundColor, grayTextColor)
 
         toggleGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (isChecked) {
-                when (checkedId) {
-                    R.id.lostButton -> {
-                        lostButton.strokeColor = lostColor
-                        lostButton.setTextColor(lostColor)
-                        foundButton.strokeColor = grayTextColor
-                        foundButton.setTextColor(grayTextColor)
-                    }
-                    R.id.foundButton -> {
-                        foundButton.strokeColor = foundColor
-                        foundButton.setTextColor(foundColor)
-                        lostButton.strokeColor = grayTextColor
-                        lostButton.setTextColor(grayTextColor)
-                    }
-                }
+                updateToggleColors(checkedId, lostButton, foundButton, lostColor, foundColor, grayTextColor)
             }
         }
 
@@ -115,31 +156,19 @@ class NewReportDialog : DialogFragment() {
             pickMedia.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
         }
 
-        val dateTime = view.findViewById<TextInputEditText>(R.id.dateTime)
-        val currentCalendar = Calendar.getInstance()
-        val defaultFormat = SimpleDateFormat("MMM dd, yyyy 'at' hh:mm a", Locale.getDefault())
-        dateTime.setText(defaultFormat.format(currentCalendar.time))
-
         dateTime.setOnClickListener {
-            showDateTimePicker(dateTime)
+            showDateTimePicker(dateTime, dateTimeFormat)
         }
 
-        val contactInput = view.findViewById<TextInputEditText>(R.id.contactNumber)
-        authViewModel.userData.observe(viewLifecycleOwner) { user ->
-            if (user != null && contactInput.text.isNullOrBlank()) {
-                contactInput.setText(user.phone)
-            }
-        }
-
-        val publishButton = view.findViewById<MaterialButton>(R.id.publishButton)
         publishButton.setOnClickListener {
             val isLost = toggleGroup.checkedButtonId == R.id.lostButton
             val animalType = dropdownAnimalType.text.toString()
             val contact = contactInput.text.toString()
-            val locationString = view.findViewById<TextInputEditText>(R.id.location).text.toString()
+            val locationString = locationInput.text.toString()
             val dateTimeString = dateTime.text.toString()
-            val descriptionString = view.findViewById<TextInputEditText>(R.id.description).text.toString()
-            val imageString = selectedImageUri?.toString() ?: ""
+            val descriptionString = descriptionInput.text.toString()
+            
+            val imageString = selectedImageUri?.toString() ?: editingPost?.imageUrl ?: ""
 
             if (locationString.isBlank() || descriptionString.isBlank() || contact.isBlank()) {
                 Toast.makeText(requireContext(), getString(R.string.error_missing_fields), Toast.LENGTH_SHORT).show()
@@ -151,35 +180,76 @@ class NewReportDialog : DialogFragment() {
             val profilePicUrl = currentUserData?.avatarUrl ?: ""
 
             if (currentUserId == null || currentUserData == null) {
-                Toast.makeText(requireContext(), "Error: User not logged in", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), getString(R.string.error_user_not_logged_in), Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
             val authorName = "${currentUserData.firstName} ${currentUserData.lastName}"
 
-            val newPost = Post(
-                id = UUID.randomUUID().toString(),
-                authorId = currentUserId,
-                userName = authorName,
-                authorProfileImageUrl = profilePicUrl,
-                isLost = isLost,
-                petType = animalType,
-                contactNumber = contact,
-                lastSeenLocation = locationString,
-                eventDate = dateTimeString,
-                createdAt = System.currentTimeMillis(),
-                imageUrl = imageString,
-                description = descriptionString
-            )
+            if (editingPost != null) {
+                val updatedPost = editingPost!!.copy(
+                    isLost = isLost,
+                    petType = animalType,
+                    contactNumber = contact,
+                    lastSeenLocation = locationString,
+                    eventDate = dateTimeString,
+                    imageUrl = imageString,
+                    description = descriptionString
+                )
+                postsViewModel.updatePost(updatedPost) { success, messageRes ->
+                     if (success) {
+                         Toast.makeText(requireContext(), getString(R.string.report_updated), Toast.LENGTH_SHORT).show()
+                         dismiss()
+                     } else {
+                         Toast.makeText(requireContext(), getString(messageRes), Toast.LENGTH_SHORT).show()
+                     }
+                }
+            } else {
+                val newPost = Post(
+                    id = UUID.randomUUID().toString(),
+                    authorId = currentUserId,
+                    userName = authorName,
+                    authorProfileImageUrl = profilePicUrl,
+                    isLost = isLost,
+                    petType = animalType,
+                    contactNumber = contact,
+                    lastSeenLocation = locationString,
+                    eventDate = dateTimeString,
+                    createdAt = System.currentTimeMillis(),
+                    imageUrl = imageString,
+                    description = descriptionString
+                )
 
-            postsViewModel.addPost(newPost)
-
-            Toast.makeText(requireContext(), getString(R.string.report_published), Toast.LENGTH_SHORT).show()
-            dismiss()
+                postsViewModel.addPost(newPost) { success, messageRes ->
+                    if (success) {
+                        Toast.makeText(requireContext(), getString(R.string.report_published), Toast.LENGTH_SHORT).show()
+                        dismiss()
+                    } else {
+                        Toast.makeText(requireContext(), getString(messageRes), Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
         }
     }
 
-    private fun showDateTimePicker(editText: TextInputEditText) {
+    private fun updateToggleColors(checkedId: Int, lostButton: MaterialButton, foundButton: MaterialButton, lostColor: ColorStateList, foundColor: ColorStateList, grayTextColor: ColorStateList) {
+        when (checkedId) {
+            R.id.lostButton -> {
+                lostButton.strokeColor = lostColor
+                lostButton.setTextColor(lostColor)
+                foundButton.strokeColor = grayTextColor
+                foundButton.setTextColor(grayTextColor)
+            }
+            R.id.foundButton -> {
+                foundButton.strokeColor = foundColor
+                foundButton.setTextColor(foundColor)
+                lostButton.strokeColor = grayTextColor
+                lostButton.setTextColor(grayTextColor)
+            }
+        }
+    }
+
+    private fun showDateTimePicker(editText: TextInputEditText, formatString: String) {
         val datePicker = MaterialDatePicker.Builder.datePicker()
             .setTitleText(getString(R.string.select_date))
             .build()
@@ -196,7 +266,7 @@ class NewReportDialog : DialogFragment() {
                 calendar.set(Calendar.HOUR_OF_DAY, timePicker.hour)
                 calendar.set(Calendar.MINUTE, timePicker.minute)
 
-                val format = SimpleDateFormat("MMM dd, yyyy 'at' hh:mm a", Locale.getDefault())
+                val format = SimpleDateFormat(formatString, Locale.getDefault())
                 editText.setText(format.format(calendar.time))
             }
             timePicker.show(parentFragmentManager, "TimePicker")
