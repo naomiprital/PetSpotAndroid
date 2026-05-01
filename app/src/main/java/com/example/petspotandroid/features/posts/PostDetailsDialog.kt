@@ -26,11 +26,17 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.petspotandroid.adapter.CommentsAdapter
 import com.example.petspotandroid.data.models.Comment
+import com.example.petspotandroid.features.profile.UserProfileDialog
 import com.example.petspotandroid.viewmodel.AuthViewModel
 import com.example.petspotandroid.viewmodel.PostsViewModel
+import com.google.firebase.firestore.FirebaseFirestore
 import java.util.UUID
 
 class PostDetailsDialog(private val post: Post) : DialogFragment() {
+
+    private lateinit var authViewModel: AuthViewModel
+    private lateinit var postsViewModel: PostsViewModel
+    private lateinit var commentsAdapter: CommentsAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -39,124 +45,148 @@ class PostDetailsDialog(private val post: Post) : DialogFragment() {
         return inflater.inflate(R.layout.fragment_post_details, container, false)
     }
 
-    @SuppressLint("SetTextI18n")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val closeButton = view.findViewById<ImageButton>(R.id.closeButton)
-        val posterName = view.findViewById<TextView>(R.id.posterName)
-        val listerInfoButton = view.findViewById<TextView>(R.id.listerInfoTitle)
-        val locationText = view.findViewById<TextView>(R.id.locationText)
-        val seenOnText = view.findViewById<TextView>(R.id.seenOnText)
-        val descriptionText = view.findViewById<TextView>(R.id.descriptionText)
-        val postedDate = view.findViewById<TextView>(R.id.postedDate)
-        val statusBadge = view.findViewById<TextView>(R.id.statusBadge)
-        val postImage = view.findViewById<ImageView>(R.id.postImage)
-        val profileImageView = view.findViewById<ImageView>(R.id.userProfileImage)
-        val callButton = view.findViewById<MaterialButton>(R.id.callButton)
+        authViewModel = ViewModelProvider(requireActivity())[AuthViewModel::class.java]
+        postsViewModel = ViewModelProvider(requireActivity())[PostsViewModel::class.java]
 
-        closeButton.setOnClickListener { dismiss() }
+        setupStaticUi(view)
+        setupPostImages(view)
+        setupCommentsSection(view)
+        setupClickListeners(view)
+    }
 
-        posterName.text = post.userName
-        listerInfoButton.setOnClickListener {
-            Toast.makeText(requireContext(), "Profile feature coming soon!", Toast.LENGTH_SHORT).show()
-        }
-
-        locationText.text = post.lastSeenLocation
-        seenOnText.text = post.eventDate
-        descriptionText.text = post.description
+    private fun setupStaticUi(view: View) {
+        view.findViewById<TextView>(R.id.posterName).text = post.userName
+        view.findViewById<TextView>(R.id.locationText).text = post.lastSeenLocation
+        view.findViewById<TextView>(R.id.seenOnText).text = post.eventDate
+        view.findViewById<TextView>(R.id.descriptionText).text = post.description
 
         val postedFormat = SimpleDateFormat("'Posted' dd/MM/yyyy", Locale.getDefault())
-        postedDate.text = postedFormat.format(Date(post.createdAt))
+        view.findViewById<TextView>(R.id.postedDate).text = postedFormat.format(Date(post.createdAt))
 
+        setupStatusBadge(view)
+    }
+
+    @SuppressLint("SetTextI18n")
+    private fun setupStatusBadge(view: View) {
+        val statusBadge = view.findViewById<TextView>(R.id.statusBadge)
         val badgeTextId = if (post.isLost) R.string.lost else R.string.found
         val badgeColorId = if (post.isLost) R.color.status_lost else R.color.status_found
         val color = ContextCompat.getColor(requireContext(), badgeColorId)
 
         statusBadge.text = "${getString(badgeTextId)} ${post.petType}"
         statusBadge.setTextColor(color)
-
         statusBadge.background?.mutate()?.let {
             it.setTint(color)
             it.alpha = 40
         }
+    }
 
+    private fun setupPostImages(view: View) {
+        val postImage = view.findViewById<ImageView>(R.id.postImage)
+        val profileImageView = view.findViewById<ImageView>(R.id.userProfileImage)
 
-        if (post.imageUrl.isNotEmpty()) {
-            Picasso.get()
-                .load(post.imageUrl)
-                .fit()
-                .centerCrop()
-                .placeholder(android.R.drawable.ic_menu_camera)
-                .error(android.R.drawable.ic_menu_camera)
-                .into(postImage)
-        } else {
-            postImage.setImageResource(android.R.drawable.ic_menu_camera)
-        }
+        val imageUrl = post.imageUrl.ifEmpty { null }
+        Picasso.get()
+            .load(imageUrl)
+            .fit()
+            .centerCrop()
+            .placeholder(android.R.drawable.ic_menu_camera)
+            .error(android.R.drawable.ic_menu_camera)
+            .into(postImage)
 
-        if (post.authorProfileImageUrl.isNotEmpty()) {
-            Picasso.get()
-                .load(post.authorProfileImageUrl)
-                .placeholder(R.drawable.ic_person)
-                .error(R.drawable.ic_person)
-                .fit()
-                .centerCrop()
-                .into(profileImageView)
-        } else {
-            profileImageView.setImageResource(R.drawable.ic_person)
-        }
+        val profileUrl = post.authorProfileImageUrl.ifEmpty { null }
+        Picasso.get()
+            .load(profileUrl)
+            .placeholder(R.drawable.ic_person)
+            .error(R.drawable.ic_person)
+            .fit()
+            .centerCrop()
+            .into(profileImageView)
+    }
 
-        callButton.text = getString(R.string.call_lister, post.contactNumber)
-        callButton.setOnClickListener {
-            val dialIntent = Intent(Intent.ACTION_DIAL).apply {
-                data = "tel:${post.contactNumber}".toUri()
+    private fun setupClickListeners(view: View) {
+        view.findViewById<ImageButton>(R.id.closeButton).setOnClickListener { dismiss() }
+
+        val onProfileClick = View.OnClickListener { openUserProfile(post.authorId) }
+        view.findViewById<TextView>(R.id.posterName).setOnClickListener(onProfileClick)
+        view.findViewById<TextView>(R.id.listerInfoTitle).setOnClickListener(onProfileClick)
+        view.findViewById<ImageView>(R.id.userProfileImage).setOnClickListener(onProfileClick)
+
+        view.findViewById<MaterialButton>(R.id.callButton).apply {
+            text = getString(R.string.call_lister, post.contactNumber)
+            setOnClickListener {
+                val dialIntent = Intent(Intent.ACTION_DIAL).apply {
+                    data = "tel:${post.contactNumber}".toUri()
+                }
+                startActivity(dialIntent)
             }
-            startActivity(dialIntent)
         }
+    }
 
-        val authViewModel = ViewModelProvider(requireActivity())[AuthViewModel::class.java]
-        val postsViewModel = ViewModelProvider(requireActivity())[PostsViewModel::class.java]
-
+    private fun setupCommentsSection(view: View) {
         val commentsRecycler = view.findViewById<RecyclerView>(R.id.commentsRecyclerView)
+        val countBadge = view.findViewById<TextView>(R.id.commentsCountBadge)
         val commentInput = view.findViewById<EditText>(R.id.commentEditText)
         val sendButton = view.findViewById<ImageButton>(R.id.sendCommentButton)
-        val countBadge = view.findViewById<TextView>(R.id.commentsCountBadge)
 
         commentsRecycler.layoutManager = LinearLayoutManager(requireContext())
-        val commentsAdapter = CommentsAdapter(post.comments)
+        commentsAdapter = CommentsAdapter(post.comments) { commenterId ->
+            openUserProfile(commenterId)
+        }
         commentsRecycler.adapter = commentsAdapter
         countBadge.text = post.comments.size.toString()
 
         sendButton.setOnClickListener {
-            val text = commentInput.text.toString().trim()
-            if (text.isEmpty()) return@setOnClickListener
-
-            val currentUser = authViewModel.userData.value
-            val currentUserId = authViewModel.user.value?.uid
-
-            if (currentUser != null && currentUserId != null) {
-                val newComment = Comment(
-                    id = UUID.randomUUID().toString(),
-                    authorId = currentUserId,
-                    authorName = "${currentUser.firstName} ${currentUser.lastName}",
-                    authorProfileImageUrl = currentUser.avatarUrl ?: "",
-                    text = text,
-                    timestamp = System.currentTimeMillis()
-                )
-
-                val updatedComments = post.comments.toMutableList()
-                updatedComments.add(newComment)
-                post.comments = updatedComments
-
-                commentsAdapter.updateComments(post.comments)
-                countBadge.text = post.comments.size.toString()
-                commentInput.text.clear()
-
-                postsViewModel.updatePost(post)
-            } else {
-                Toast.makeText(requireContext(), "Must be logged in to comment", Toast.LENGTH_SHORT).show()
-            }
+            handleNewComment(commentInput, countBadge)
         }
+    }
+
+    private fun handleNewComment(input: EditText, countBadge: TextView) {
+        val text = input.text.toString().trim()
+        if (text.isEmpty()) return
+
+        val currentUser = authViewModel.userData.value
+        val currentUserId = authViewModel.user.value?.uid
+
+        if (currentUser != null && currentUserId != null) {
+            val newComment = Comment(
+                id = UUID.randomUUID().toString(),
+                authorId = currentUserId,
+                authorName = "${currentUser.firstName} ${currentUser.lastName}",
+                authorProfileImageUrl = currentUser.avatarUrl ?: "",
+                text = text,
+                timestamp = System.currentTimeMillis()
+            )
+
+            post.comments = post.comments.toMutableList().apply { add(newComment) }
+            commentsAdapter.updateComments(post.comments)
+            countBadge.text = post.comments.size.toString()
+            input.text.clear()
+            postsViewModel.updatePost(post)
+        } else {
+            Toast.makeText(requireContext(), "Must be logged in to comment", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun openUserProfile(userId: String) {
+        FirebaseFirestore.getInstance().collection("users")
+            .document(userId)
+            .get()
+            .addOnSuccessListener { document ->
+                val user = document.toObject(com.example.petspotandroid.data.models.User::class.java)
+                if (user != null) {
+                    UserProfileDialog().apply {
+                        setUser(user)
+                        show(this@PostDetailsDialog.parentFragmentManager, "UserProfileDialog")
+                    }
+                }
+            }
+            .addOnFailureListener {
+                Toast.makeText(requireContext(), "Error loading profile", Toast.LENGTH_SHORT).show()
+            }
     }
 
     override fun onStart() {
