@@ -9,16 +9,18 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.petspotandroid.R
-import com.example.petspotandroid.adapter.PostsAdapter
+import com.example.petspotandroid.adapter.UserPostsAdapter
 import com.example.petspotandroid.base.ToastHelper
 import com.example.petspotandroid.dao.AppLocalDb
 import com.example.petspotandroid.data.repository.AuthRepository
+import com.example.petspotandroid.ui.NewReportDialog
 import com.example.petspotandroid.viewmodel.AuthViewModel
 import com.example.petspotandroid.viewmodel.AuthViewModelFactory
 import com.example.petspotandroid.viewmodel.PostsViewModel
@@ -27,6 +29,7 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.squareup.picasso.Picasso
 import java.util.Calendar
+import androidx.core.view.isVisible
 
 class ProfileFragment : Fragment(R.layout.fragment_profile) {
 
@@ -38,7 +41,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
 
     private val postsViewModel: PostsViewModel by viewModels()
 
-    private lateinit var adapter: PostsAdapter
+    private lateinit var adapter: UserPostsAdapter
     
     private var cameraLauncher: ActivityResultLauncher<Void?>? = null
     private var galleryLauncher: ActivityResultLauncher<String>? = null
@@ -72,7 +75,36 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         val etLastName = view.findViewById<TextInputEditText>(R.id.etLastName)
         val etPhone = view.findViewById<TextInputEditText>(R.id.etPhone)
 
-        adapter = PostsAdapter(emptyList()) { _ -> }
+        adapter = UserPostsAdapter(
+            posts = emptyList(),
+            onEditClick = { post ->
+                val dialog = NewReportDialog.newInstance(post)
+                dialog.show(parentFragmentManager, "EditReportDialog")
+            },
+            onDeleteClick = { post ->
+                AlertDialog.Builder(requireContext())
+                    .setTitle(R.string.delete_post_title)
+                    .setMessage(R.string.delete_post_message)
+                    .setPositiveButton(R.string.delete) { _, _ ->
+                        postsViewModel.deletePost(post) { success, messageRes ->
+                            ToastHelper.showCustomToast(requireView(), getString(messageRes))
+                        }
+                    }
+                    .setNegativeButton(R.string.cancel, null)
+                    .show()
+            },
+            onResolveToggleClick = { post ->
+                val updatedPost = post.copy(isResolved = !post.isResolved)
+                postsViewModel.updatePost(updatedPost) { success, messageRes ->
+                    if (success) {
+                        val statusRes = if (updatedPost.isResolved) R.string.listing_marked_as_resolved_success else R.string.listing_marked_as_unresolved_success
+                        ToastHelper.showCustomToast(requireView(), getString(statusRes))
+                    } else {
+                        ToastHelper.showCustomToast(requireView(), getString(messageRes))
+                    }
+                }
+            }
+        )
         rvUserPosts.layoutManager = LinearLayoutManager(requireContext())
         rvUserPosts.adapter = adapter
 
@@ -85,7 +117,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
 
         galleryLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
             uri?.let {
-                ivProfileImage.setImageURI(it)
+                ivProfileImage.setImageURI(uri)
                 isImageUpdated = true
             }
         }
@@ -99,7 +131,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
                 val calendar = Calendar.getInstance()
                 calendar.timeInMillis = it.createdAt
                 val year = calendar.get(Calendar.YEAR)
-                tvMemberSince.text = "Community Member Since $year"
+                tvMemberSince.text = getString(R.string.community_member_since, year)
 
                 if (!it.avatarUrl.isNullOrEmpty() && !isImageUpdated) {
                     Picasso.get()
@@ -118,7 +150,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
                     tvReportsCount.text = posts.size.toString()
                     tvListingsCount.text = posts.size.toString()
                     
-                    val reunions = posts.count { post -> !post.isLost }
+                    val reunions = posts.count { post -> post.isResolved }
                     tvReunionsCount.text = reunions.toString()
                 }
             }
@@ -161,7 +193,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
 
         authViewModel.updateProfileSuccess.observe(viewLifecycleOwner) { success ->
             if (success) {
-                ToastHelper.showCustomToast(requireView(), "Profile updated successfully!")
+                ToastHelper.showCustomToast(requireView(), getString(R.string.profile_updated_successfully))
                 toggleEditMode(false, 
                     btnEditProfile, btnCancelEdit, btnSaveProfile, 
                     tvUserName, llEditName, tvPhone, tilPhone,
@@ -178,9 +210,9 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         }
 
         val showImageOptions = {
-            val options = arrayOf("Take Photo", "Choose from Gallery", "Cancel")
-            val builder = android.app.AlertDialog.Builder(requireContext())
-            builder.setTitle("Update profile picture")
+            val options = arrayOf(getString(R.string.take_photo), getString(R.string.choose_from_gallery), getString(R.string.cancel))
+            val builder = AlertDialog.Builder(requireContext())
+            builder.setTitle(R.string.update_profile_picture_title)
             builder.setItems(options) { dialog, which ->
                 when (which) {
                     0 -> cameraLauncher?.launch(null)
@@ -192,7 +224,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         }
 
         ivProfileImage.setOnClickListener {
-            if (btnSaveProfile.visibility == View.VISIBLE) {
+            if (btnSaveProfile.isVisible) {
                 showImageOptions()
             }
         }
@@ -212,7 +244,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         editName.visibility = if (isEdit) View.VISIBLE else View.GONE
         
         tvPh.visibility = if (isEdit) View.GONE else View.VISIBLE
-        tilPh.visibility = if (isEdit) View.VISIBLE else View.GONE
+        tilPh.visibility = if (isEdit) View.GONE else View.VISIBLE
         
         cameraOverlay.visibility = if (isEdit) View.VISIBLE else View.GONE
         dimOverlay.visibility = if (isEdit) View.VISIBLE else View.GONE

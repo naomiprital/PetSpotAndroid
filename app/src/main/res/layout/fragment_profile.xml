@@ -96,7 +96,7 @@
                             android:id="@+id/tvUserName"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:textColor="@android:color/black"
+                            android:textColor="@color/text_primary"
                             android:textSize="28sp"
                             android:textStyle="bold"
                             tools:text="@string/first_name_hint" />
@@ -105,6 +105,7 @@
                             android:id="@+id/llEditName"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:baselineAligned="false"
                             android:orientation="horizontal"
                             android:visibility="gone">
 
@@ -187,7 +188,7 @@
                             android:layout_height="wrap_content"
                             android:paddingStart="24dp"
                             android:paddingEnd="24dp"
-                            android:text="Edit Profile"
+                            android:text="@string/edit_profile"
                             android:textAllCaps="false"
                             android:textColor="@color/edit_profile_button"
                             app:cornerRadius="12dp"
@@ -204,7 +205,7 @@
                             android:layout_height="56dp"
                             android:layout_weight="1"
                             android:backgroundTint="@color/divider"
-                            android:text="Cancel"
+                            android:text="@string/cancel"
                             android:textAllCaps="false"
                             android:textColor="@color/edit_profile_button"
                             android:visibility="gone"
@@ -216,7 +217,7 @@
                             android:layout_height="56dp"
                             android:layout_weight="1.5"
                             android:layout_marginStart="16dp"
-                            android:text="Save Changes"
+                            android:text="@string/save_changes"
                             android:textAllCaps="false"
                             android:textSize="16sp"
                             android:textStyle="bold"
@@ -245,6 +246,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
                             android:textSize="18sp"
+                            android:textColor="@color/text_primary"
                             tools:text="@string/email_hint" />
 
                         <TextView
@@ -266,6 +268,7 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:textSize="18sp"
+                                android:textColor="@color/text_primary"
                                 tools:text="@string/phone_hint" />
 
                             <com.google.android.material.textfield.TextInputLayout
@@ -370,7 +373,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/your_listings"
-                android:textColor="@android:color/black"
+                android:textColor="@color/text_primary"
                 android:textSize="18sp"
                 android:textStyle="bold" />
 
