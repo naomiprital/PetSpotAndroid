@@ -7,8 +7,10 @@ import com.example.petspotandroid.data.models.User
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 import kotlin.coroutines.resume
 
 class AuthRepository(private val userDao: UserDao) {
@@ -26,7 +28,7 @@ class AuthRepository(private val userDao: UserDao) {
             val firebaseUser =
                 authResult.user ?: throw Exception("User creation failed: ID is null")
             val userId = firebaseUser.uid
-            
+
             var userProfile = user.copy(id = userId)
 
             if (image != null) {
@@ -37,11 +39,14 @@ class AuthRepository(private val userDao: UserDao) {
             }
 
             firestore.collection("users").document(userId).set(userProfile).await()
-            userDao.registerUser(userProfile)
+
+            withContext(Dispatchers.IO) {
+                userDao.registerUser(userProfile)
+            }
 
             Result.success(firebaseUser)
-        } catch (e: Exception) {
-            Result.failure(e)
+        } catch (exception: Exception) {
+            Result.failure(exception)
         }
     }
 
@@ -54,7 +59,7 @@ class AuthRepository(private val userDao: UserDao) {
         return try {
             val currentUser = auth.currentUser ?: throw Exception("User not logged in")
             val userId = currentUser.uid
-            
+
             val document = firestore.collection("users").document(userId).get().await()
             val existingUser = document.toObject(User::class.java) ?: throw Exception("User not found")
 
@@ -72,11 +77,14 @@ class AuthRepository(private val userDao: UserDao) {
             }
 
             firestore.collection("users").document(userId).set(updatedUser).await()
-            userDao.registerUser(updatedUser)
+
+            withContext(Dispatchers.IO) {
+                userDao.registerUser(updatedUser)
+            }
 
             Result.success(updatedUser)
-        } catch (e: Exception) {
-            Result.failure(e)
+        } catch (exception: Exception) {
+            Result.failure(exception)
         }
     }
 
@@ -94,8 +102,8 @@ class AuthRepository(private val userDao: UserDao) {
             getUserData(firebaseUser.uid)
 
             Result.success(firebaseUser)
-        } catch (e: Exception) {
-            Result.failure(e)
+        } catch (exception: Exception) {
+            Result.failure(exception)
         }
     }
 
@@ -103,25 +111,38 @@ class AuthRepository(private val userDao: UserDao) {
         return try {
             val document = firestore.collection("users").document(userId).get().await()
             val remoteUser = document.toObject(User::class.java)
-            
+
             if (remoteUser != null) {
-                userDao.registerUser(remoteUser)
+                withContext(Dispatchers.IO) {
+                    userDao.registerUser(remoteUser)
+                }
                 Result.success(remoteUser)
             } else {
-                val localUser = userDao.getUserById(userId)
+                val localUser = withContext(Dispatchers.IO) { userDao.getUserById(userId) }
                 if (localUser != null) {
                     Result.success(localUser)
                 } else {
                     Result.failure(Exception("User data not found in Firestore or Local DB"))
                 }
             }
-        } catch (e: Exception) {
-            val localUser = userDao.getUserById(userId)
+        } catch (exception: Exception) {
+            val localUser = withContext(Dispatchers.IO) { userDao.getUserById(userId) }
             if (localUser != null) {
                 Result.success(localUser)
             } else {
-                Result.failure(e)
+                Result.failure(exception)
             }
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    suspend fun checkEmailExists(email: String): Result<Boolean> {
+        return try {
+            val result = auth.fetchSignInMethodsForEmail(email).await()
+            val exists = !result.signInMethods.isNullOrEmpty()
+            Result.success(exists)
+        } catch (exception: Exception) {
+            Result.failure(exception)
         }
     }
 
@@ -129,8 +150,8 @@ class AuthRepository(private val userDao: UserDao) {
         return try {
             auth.sendPasswordResetEmail(email).await()
             Result.success(true)
-        } catch (e: Exception) {
-            Result.failure(e)
+        } catch (exception: Exception) {
+            Result.failure(exception)
         }
     }
 

@@ -52,12 +52,7 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
 
         tvForgotPassword.visibility = View.VISIBLE
         tvForgotPassword.setOnClickListener {
-            val email = etEmail.text.toString().trim()
-            if (email.isNotEmpty()) {
-                viewModel.resetPassword(email)
-            } else {
-                ToastHelper.showCustomToast(view, "Please enter your email to reset password")
-            }
+            findNavController().navigate(R.id.action_authFragment_to_forgotPasswordFragment)
         }
 
         viewModel.resetPasswordSuccess.observe(viewLifecycleOwner) { success ->
