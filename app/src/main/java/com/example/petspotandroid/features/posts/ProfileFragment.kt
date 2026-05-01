@@ -77,6 +77,12 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
 
         adapter = UserPostsAdapter(
             posts = emptyList(),
+            onItemClick = { post ->
+                if (!post.isResolved) {
+                    val dialog = PostDetailsDialog(post)
+                    dialog.show(parentFragmentManager, "PostDetailsDialog")
+                }
+            },
             onEditClick = { post ->
                 val dialog = NewReportDialog.newInstance(post)
                 dialog.show(parentFragmentManager, "EditReportDialog")
@@ -86,7 +92,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
                     .setTitle(R.string.delete_post_title)
                     .setMessage(R.string.delete_post_message)
                     .setPositiveButton(R.string.delete) { _, _ ->
-                        postsViewModel.deletePost(post) { success, messageRes ->
+                        postsViewModel.deletePost(post) { _, messageRes ->
                             ToastHelper.showCustomToast(requireView(), getString(messageRes))
                         }
                     }
@@ -241,7 +247,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         btnSave.visibility = if (isEdit) View.VISIBLE else View.GONE
         
         tvName.visibility = if (isEdit) View.GONE else View.VISIBLE
-        editName.visibility = if (isEdit) View.VISIBLE else View.GONE
+        editName.visibility = if (isEdit) View.GONE else View.VISIBLE
         
         tvPh.visibility = if (isEdit) View.GONE else View.VISIBLE
         tilPh.visibility = if (isEdit) View.GONE else View.VISIBLE
