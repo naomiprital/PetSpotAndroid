@@ -77,6 +77,8 @@
     <string name="send_comment_button">Send comment button</string>
     <string name="community_member_since">Community Member Since %1$d</string>
     <string name="save_changes">Save Changes</string>
+    <string name="saving">Saving…</string>
+    <string name="publishing">Publishing…</string>
     <string name="reunions">REUNIONS</string>
     <string name="your_listings">Your Listings</string>
     <string name="reports">REPORTS</string>
