@@ -1,6 +1,9 @@
-package com.example.petspotandroid.ui
+package com.example.petspotandroid.features.posts
 
 import android.annotation.SuppressLint
+import android.app.AlertDialog
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -13,7 +16,10 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.ViewModelProvider
 import com.example.petspotandroid.R
@@ -27,6 +33,7 @@ import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -35,6 +42,7 @@ import java.util.UUID
 class NewReportDialog : DialogFragment() {
 
     private var selectedImageUri: Uri? = null
+    private var tempCameraUri: Uri? = null
 
     private lateinit var postsViewModel: PostsViewModel
     private lateinit var authViewModel: AuthViewModel
@@ -46,14 +54,28 @@ class NewReportDialog : DialogFragment() {
         if (uri != null) {
             selectedImageUri = uri
             uploadText?.text = getString(R.string.photo_selected)
-            uploadText?.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.status_found))
-            cameraIcon?.imageTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.BLACK)
+            uploadText?.setTextColor(ContextCompat.getColor(requireContext(), R.color.status_found))
+            cameraIcon?.imageTintList = ColorStateList.valueOf(Color.BLACK)
         } else {
             selectedImageUri = null
             uploadText?.text = getString(R.string.upload_photo)
-            val defaultColor = androidx.core.content.ContextCompat.getColor(requireContext(), R.color.gray_text)
+            val defaultColor = ContextCompat.getColor(requireContext(), R.color.gray_text)
             uploadText?.setTextColor(defaultColor)
-            cameraIcon?.imageTintList = android.content.res.ColorStateList.valueOf(defaultColor)
+            cameraIcon?.imageTintList = ColorStateList.valueOf(defaultColor)
+        }
+    }
+
+    private val takePicture = registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+        val uploadText = view?.findViewById<TextView>(R.id.uploadText)
+        val cameraIcon = view?.findViewById<ImageView>(R.id.cameraIcon)
+
+        if (success && tempCameraUri != null) {
+            selectedImageUri = tempCameraUri
+            uploadText?.text = getString(R.string.photo_selected)
+            uploadText?.setTextColor(ContextCompat.getColor(requireContext(), R.color.status_found))
+            cameraIcon?.imageTintList = ColorStateList.valueOf(Color.BLACK)
+        } else {
+            selectedImageUri = null
         }
     }
 
@@ -84,9 +106,9 @@ class NewReportDialog : DialogFragment() {
         val lostButton = view.findViewById<MaterialButton>(R.id.lostButton)
         val foundButton = view.findViewById<MaterialButton>(R.id.foundButton)
 
-        val lostColor = android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.status_lost))
-        val foundColor = android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.status_found))
-        val grayTextColor = android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.gray_text))
+        val lostColor = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.status_lost))
+        val foundColor = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.status_found))
+        val grayTextColor = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.gray_text))
 
         toggleGroup.check(R.id.lostButton)
         lostButton.strokeColor = lostColor
@@ -115,7 +137,7 @@ class NewReportDialog : DialogFragment() {
 
         val uploadImageButton = view.findViewById<LinearLayout>(R.id.uploadImageButton)
         uploadImageButton.setOnClickListener {
-            pickMedia.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+            showImageSourceDialog()
         }
 
         val dateTime = view.findViewById<TextInputEditText>(R.id.dateTime)
@@ -236,5 +258,33 @@ class NewReportDialog : DialogFragment() {
             val height = (displayMetrics.heightPixels * 0.90).toInt()
             dialog.window?.setLayout(width, height)
         }
+    }
+
+    private fun showImageSourceDialog() {
+        val options = arrayOf("Take Photo", "Choose from Gallery")
+
+        AlertDialog.Builder(requireContext())
+            .setTitle("Select Image Source")
+            .setItems(options) { _, which ->
+                if (which == 0) {
+                    launchCamera()
+                } else {
+                    pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                }
+            }
+            .show()
+    }
+
+    private fun launchCamera() {
+        val photoFile =
+            File(requireContext().cacheDir, "camera_image_${System.currentTimeMillis()}.jpg")
+
+        tempCameraUri = FileProvider.getUriForFile(
+            requireContext(),
+            "${requireContext().packageName}.fileprovider",
+            photoFile
+        )
+
+        takePicture.launch(tempCameraUri)
     }
 }

@@ -17,21 +17,14 @@ import androidx.appcompat.widget.ListPopupWindow
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.petspotandroid.R
 import com.example.petspotandroid.adapter.PostsAdapter
-import com.example.petspotandroid.api.RetrofitInstance
-import com.example.petspotandroid.ui.NewReportDialog
 import com.example.petspotandroid.viewmodel.FilterType
 import com.example.petspotandroid.viewmodel.PostsViewModel
 import com.example.petspotandroid.viewmodel.SortOrder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 class PostsListFragment : Fragment() {
 
