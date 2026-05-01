@@ -92,7 +92,6 @@ class UserPostsAdapter(
                 llContentDimmed.alpha = 0.5f
                 imageView.alpha = 0.5f
                 
-                // Set click listener to null or handle disabled state
                 btnEdit.setOnClickListener(null)
                 btnDelete.setOnClickListener(null)
             } else {
@@ -109,7 +108,6 @@ class UserPostsAdapter(
                 btnResolve.iconTint = ColorStateList.valueOf(unresolvedText)
                 btnResolve.setStrokeColor(ColorStateList.valueOf(unresolvedStroke))
                 
-                // Enable actions and restore opacity
                 btnEdit.isEnabled = true
                 btnDelete.isEnabled = true
                 llContentDimmed.alpha = 1.0f

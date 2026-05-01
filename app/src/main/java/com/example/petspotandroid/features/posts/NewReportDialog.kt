@@ -77,12 +77,6 @@ class NewReportDialog : DialogFragment() {
                     )
                 )
                 cameraIcon?.imageTintList = ColorStateList.valueOf(Color.BLACK)
-            } else {
-                selectedImageUri = null
-                uploadText?.text = getString(R.string.upload_photo)
-                val defaultColor = ContextCompat.getColor(requireContext(), R.color.gray_text)
-                uploadText?.setTextColor(defaultColor)
-                cameraIcon?.imageTintList = ColorStateList.valueOf(defaultColor)
             }
         }
 
@@ -101,8 +95,6 @@ class NewReportDialog : DialogFragment() {
                     )
                 )
                 cameraIcon?.imageTintList = ColorStateList.valueOf(Color.BLACK)
-            } else {
-                selectedImageUri = null
             }
         }
 
@@ -135,7 +127,6 @@ class NewReportDialog : DialogFragment() {
             ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, animalTypes)
         val dropdownAnimalType = view.findViewById<AutoCompleteTextView>(R.id.dropdownAnimalType)
         dropdownAnimalType.setAdapter(adapter)
-        dropdownAnimalType.setText(animalTypes[0], false)
 
         val toggleGroup = view.findViewById<MaterialButtonToggleGroup>(R.id.toggleGroupListingType)
         val lostButton = view.findViewById<MaterialButton>(R.id.lostButton)
@@ -178,7 +169,7 @@ class NewReportDialog : DialogFragment() {
                         R.color.status_found
                     )
                 )
-                cameraIcon.imageTintList = ColorStateList.valueOf(android.graphics.Color.BLACK)
+                cameraIcon.imageTintList = ColorStateList.valueOf(Color.BLACK)
             }
         } else {
             toggleGroup.check(R.id.lostButton)
@@ -222,17 +213,8 @@ class NewReportDialog : DialogFragment() {
             showImageSourceDialog()
         }
 
-        val currentCalendar = Calendar.getInstance()
-        val defaultFormat = SimpleDateFormat("MMM dd, yyyy 'at' hh:mm a", Locale.getDefault())
-        dateTime.setText(defaultFormat.format(currentCalendar.time))
         dateTime.setOnClickListener {
             showDateTimePicker(dateTime, dateTimeFormat)
-        }
-
-        authViewModel.userData.observe(viewLifecycleOwner) { user ->
-            if (user != null && contactInput.text.isNullOrBlank()) {
-                contactInput.setText(user.phone)
-            }
         }
 
         publishButton.setOnClickListener {
@@ -267,14 +249,15 @@ class NewReportDialog : DialogFragment() {
             }
 
             publishButton.isEnabled = false
-            publishButton.text = "Publishing..."
+            publishButton.text = if (editingPost != null) "Saving..." else "Publishing..."
 
-            val newPostId = UUID.randomUUID().toString()
+            val postId = editingPost?.id ?: UUID.randomUUID().toString()
+            val createdAt = editingPost?.createdAt ?: System.currentTimeMillis()
             val authorName = "${currentUserData.firstName} ${currentUserData.lastName}"
 
-            val createAndSavePost = { finalImageUrl: String ->
-                val newPost = Post(
-                    id = newPostId,
+            val savePostAction = { finalImageUrl: String ->
+                val post = Post(
+                    id = postId,
                     authorId = currentUserId,
                     userName = authorName,
                     authorProfileImageUrl = profilePicUrl,
@@ -283,28 +266,44 @@ class NewReportDialog : DialogFragment() {
                     contactNumber = contact,
                     lastSeenLocation = locationString,
                     eventDate = dateTimeString,
-                    createdAt = System.currentTimeMillis(),
+                    createdAt = createdAt,
                     imageUrl = finalImageUrl,
                     description = descriptionString
                 )
 
-                postsViewModel.addPost(newPost)
-                Toast.makeText(
-                    requireContext(),
-                    getString(R.string.report_published),
-                    Toast.LENGTH_SHORT
-                ).show()
-                dismiss()
+                if (editingPost != null) {
+                    postsViewModel.updatePost(post) { success, messageRes ->
+                        if (success) {
+                            Toast.makeText(requireContext(), getString(R.string.report_updated), Toast.LENGTH_SHORT).show()
+                            dismiss()
+                        } else {
+                            publishButton.isEnabled = true
+                            publishButton.text = getString(R.string.save_changes)
+                            Toast.makeText(requireContext(), getString(messageRes), Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                } else {
+                    postsViewModel.addPost(post) { success, messageRes ->
+                        if (success) {
+                            Toast.makeText(requireContext(), getString(R.string.report_published), Toast.LENGTH_SHORT).show()
+                            dismiss()
+                        } else {
+                            publishButton.isEnabled = true
+                            publishButton.text = getString(R.string.publish_report)
+                            Toast.makeText(requireContext(), getString(messageRes), Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
             }
 
             if (selectedImageUri != null) {
                 val storageModel = FirebaseStorageModel()
-                storageModel.uploadPostImage(selectedImageUri!!, newPostId) { uploadedUrl ->
+                storageModel.uploadPostImage(selectedImageUri!!, postId) { uploadedUrl ->
                     if (uploadedUrl != null) {
-                        createAndSavePost(uploadedUrl)
+                        savePostAction(uploadedUrl)
                     } else {
                         publishButton.isEnabled = true
-                        publishButton.text = getString(R.string.publish_report)
+                        publishButton.text = if (editingPost != null) getString(R.string.save_changes) else getString(R.string.publish_report)
                         Toast.makeText(
                             requireContext(),
                             "Failed to upload image. Please try again.",
@@ -313,7 +312,7 @@ class NewReportDialog : DialogFragment() {
                     }
                 }
             } else {
-                createAndSavePost("")
+                savePostAction(editingPost?.imageUrl ?: "")
             }
         }
     }
