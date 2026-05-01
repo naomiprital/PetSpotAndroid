@@ -10,6 +10,7 @@ import android.widget.TextView
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -29,7 +30,7 @@ import java.util.Calendar
 
 class ProfileFragment : Fragment(R.layout.fragment_profile) {
 
-    private val authViewModel: AuthViewModel by viewModels {
+    private val authViewModel: AuthViewModel by activityViewModels {
         val userDao = AppLocalDb.getDatabase(requireContext()).userDao()
         val repository = AuthRepository(userDao)
         AuthViewModelFactory(repository)
