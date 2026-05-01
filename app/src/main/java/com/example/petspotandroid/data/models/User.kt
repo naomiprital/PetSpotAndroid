@@ -11,5 +11,6 @@ data class User(
     val lastName: String = "",
     val email: String = "",
     val phone: String = "",
-    val avatarUrl: String? = null
+    val avatarUrl: String? = null,
+    val createdAt: Long = System.currentTimeMillis()
 )

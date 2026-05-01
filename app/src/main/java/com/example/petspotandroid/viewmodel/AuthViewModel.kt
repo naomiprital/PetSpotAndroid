@@ -13,16 +13,21 @@ import kotlinx.coroutines.launch
 class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
+    
     private val _user = MutableLiveData<FirebaseUser?>()
-
     val user: LiveData<FirebaseUser?> = _user
+    
     private val _userData = MutableLiveData<User?>()
     val userData: LiveData<User?> = _userData
-    private val _errorMessage = MutableLiveData<String>()
-    val errorMessage: LiveData<String> = _errorMessage
+    
+    private val _errorMessage = MutableLiveData<String?>()
+    val errorMessage: LiveData<String?> = _errorMessage
+    
     private val _resetPasswordSuccess = MutableLiveData<Boolean>()
-
     val resetPasswordSuccess: LiveData<Boolean> = _resetPasswordSuccess
+
+    private val _updateProfileSuccess = MutableLiveData<Boolean>()
+    val updateProfileSuccess: LiveData<Boolean> = _updateProfileSuccess
 
     init {
         checkCurrentUser()
@@ -111,6 +116,31 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
                 _errorMessage.value = exception.message ?: "Registration failed"
             }
         }
+    }
+
+    fun updateProfile(firstName: String, lastName: String, phone: String, image: Bitmap?) {
+        if (firstName.isBlank() || lastName.isBlank() || phone.isBlank()) {
+            _errorMessage.value = "Please fill in all fields"
+            return
+        }
+
+        _isLoading.value = true
+        viewModelScope.launch {
+            val result = repository.updateUserProfile(firstName, lastName, phone, image)
+            _isLoading.value = false
+            
+            result.onSuccess { updatedUser ->
+                _userData.value = updatedUser
+                _updateProfileSuccess.value = true
+            }.onFailure { exception ->
+                _errorMessage.value = exception.message ?: "Update failed"
+            }
+        }
+    }
+
+    fun clearUpdateProfileStatus() {
+        _updateProfileSuccess.value = false
+        _errorMessage.value = null
     }
 
     fun logout() {

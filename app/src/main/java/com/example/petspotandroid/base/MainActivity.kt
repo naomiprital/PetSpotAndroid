@@ -155,7 +155,6 @@ class MainActivity : AppCompatActivity() {
             btnLogout.setOnClickListener {
                 popupWindow.dismiss()
                 authViewModel.logout()
-                ToastHelper.showCustomToast(anchorView, "Logged out successfully")
                 if (navController.currentDestination?.id != R.id.authFragment) {
                     navController.navigate(R.id.action_global_authFragment)
                 }
@@ -163,12 +162,16 @@ class MainActivity : AppCompatActivity() {
 
             btnHome.setOnClickListener {
                 popupWindow.dismiss()
-                ToastHelper.showCustomToast(anchorView, "Going Home...")
+                if (navController.currentDestination?.id != R.id.postsListFragment) {
+                    navController.navigate(R.id.action_global_postsListFragment)
+                }
             }
 
             btnProfile.setOnClickListener {
                 popupWindow.dismiss()
-                ToastHelper.showCustomToast(anchorView, "Opening Profile...")
+                if (navController.currentDestination?.id != R.id.profileFragment) {
+                    navController.navigate(R.id.action_postsListFragment_to_profileFragment)
+                }
             }
 
             popupWindow.showAsDropDown(anchorView, 0, 16, Gravity.END)

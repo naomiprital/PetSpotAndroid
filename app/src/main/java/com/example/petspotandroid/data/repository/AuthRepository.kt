@@ -45,6 +45,41 @@ class AuthRepository(private val userDao: UserDao) {
         }
     }
 
+    suspend fun updateUserProfile(
+        firstName: String,
+        lastName: String,
+        phone: String,
+        image: Bitmap? = null
+    ): Result<User> {
+        return try {
+            val currentUser = auth.currentUser ?: throw Exception("User not logged in")
+            val userId = currentUser.uid
+            
+            val document = firestore.collection("users").document(userId).get().await()
+            val existingUser = document.toObject(User::class.java) ?: throw Exception("User not found")
+
+            var updatedUser = existingUser.copy(
+                firstName = firstName,
+                lastName = lastName,
+                phone = phone
+            )
+
+            if (image != null) {
+                val imageUrl = uploadImage(image, updatedUser)
+                if (imageUrl != null) {
+                    updatedUser = updatedUser.copy(avatarUrl = imageUrl)
+                }
+            }
+
+            firestore.collection("users").document(userId).set(updatedUser).await()
+            userDao.registerUser(updatedUser)
+
+            Result.success(updatedUser)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     private suspend fun uploadImage(image: Bitmap, user: User): String? = suspendCancellableCoroutine { continuation ->
         firebaseStorageModel.uploadUserImage(image, user) { url ->
             continuation.resume(url)
