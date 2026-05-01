@@ -3,6 +3,7 @@ package com.example.petspotandroid.data.repository
 import androidx.lifecycle.LiveData
 import com.example.petspotandroid.dao.PostDao
 import com.example.petspotandroid.data.models.Post
+import com.google.firebase.firestore.DocumentChange
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -25,9 +26,22 @@ class PostRepository(private val postDao: PostDao) {
             if (error != null) return@addSnapshotListener
 
             if (snapshot != null) {
-                val remotePosts = snapshot.toObjects(Post::class.java)
                 CoroutineScope(Dispatchers.IO).launch {
-                    postDao.insertPosts(remotePosts)
+                    for (dc in snapshot.documentChanges) {
+                        val post = dc.document.toObject(Post::class.java)
+
+                        when (dc.type) {
+                            DocumentChange.Type.ADDED -> {
+                                postDao.insertPosts(listOf(post))
+                            }
+                            DocumentChange.Type.MODIFIED -> {
+                                postDao.insertPosts(listOf(post))
+                            }
+                            DocumentChange.Type.REMOVED -> {
+                                postDao.delete(post)
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -39,6 +53,7 @@ class PostRepository(private val postDao: PostDao) {
             val remotePosts = snapshot.toObjects(Post::class.java)
 
             withContext(Dispatchers.IO) {
+                postDao.deleteAll()
                 postDao.insertPosts(remotePosts)
             }
 
