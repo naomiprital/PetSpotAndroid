@@ -1,6 +1,5 @@
 package com.example.petspotandroid.ui
 
-import android.content.res.ColorStateList
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -21,6 +20,7 @@ import com.example.petspotandroid.R
 import com.example.petspotandroid.data.models.Post
 import com.example.petspotandroid.viewmodel.PostsViewModel
 import com.example.petspotandroid.viewmodel.AuthViewModel
+import com.example.petspotandroid.data.firebase.FirebaseStorageModel
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.datepicker.MaterialDatePicker
@@ -78,6 +78,7 @@ class NewReportDialog : DialogFragment() {
         return inflater.inflate(R.layout.fragment_new_report, container, false)
     }
 
+    @SuppressLint("SetTextI18n")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -92,7 +93,7 @@ class NewReportDialog : DialogFragment() {
         val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, animalTypes)
         val dropdownAnimalType = view.findViewById<AutoCompleteTextView>(R.id.dropdownAnimalType)
         dropdownAnimalType.setAdapter(adapter)
-        
+
         val toggleGroup = view.findViewById<MaterialButtonToggleGroup>(R.id.toggleGroupListingType)
         val lostButton = view.findViewById<MaterialButton>(R.id.lostButton)
         val foundButton = view.findViewById<MaterialButton>(R.id.foundButton)
@@ -115,14 +116,14 @@ class NewReportDialog : DialogFragment() {
             val post = editingPost!!
             dialogTitle.text = getString(R.string.edit_report)
             publishButton.text = getString(R.string.save_changes)
-            
+
             toggleGroup.check(if (post.isLost) R.id.lostButton else R.id.foundButton)
             dropdownAnimalType.setText(post.petType, false)
             contactInput.setText(post.contactNumber)
             locationInput.setText(post.lastSeenLocation)
             dateTime.setText(post.eventDate)
             descriptionInput.setText(post.description)
-            
+
             if (post.imageUrl.isNotEmpty()) {
                 uploadText.text = getString(R.string.photo_selected)
                 uploadText.setTextColor(ContextCompat.getColor(requireContext(), R.color.status_found))
@@ -131,7 +132,7 @@ class NewReportDialog : DialogFragment() {
         } else {
             toggleGroup.check(R.id.lostButton)
             dropdownAnimalType.setText(animalTypes[0], false)
-            
+
             val currentCalendar = Calendar.getInstance()
             val defaultFormat = SimpleDateFormat(dateTimeFormat, Locale.getDefault())
             dateTime.setText(defaultFormat.format(currentCalendar.time))
@@ -167,8 +168,9 @@ class NewReportDialog : DialogFragment() {
             val locationString = locationInput.text.toString()
             val dateTimeString = dateTime.text.toString()
             val descriptionString = descriptionInput.text.toString()
-            
+
             val imageString = selectedImageUri?.toString() ?: editingPost?.imageUrl ?: ""
+            val descriptionString = view.findViewById<TextInputEditText>(R.id.description).text.toString()
 
             if (locationString.isBlank() || descriptionString.isBlank() || contact.isBlank()) {
                 Toast.makeText(requireContext(), getString(R.string.error_missing_fields), Toast.LENGTH_SHORT).show()
@@ -184,68 +186,31 @@ class NewReportDialog : DialogFragment() {
                 return@setOnClickListener
             }
 
+            publishButton.isEnabled = false
+            publishButton.text = "Publishing..."
+
+            val newPostId = UUID.randomUUID().toString()
             val authorName = "${currentUserData.firstName} ${currentUserData.lastName}"
 
-            if (editingPost != null) {
-                val updatedPost = editingPost!!.copy(
-                    isLost = isLost,
-                    petType = animalType,
-                    contactNumber = contact,
-                    lastSeenLocation = locationString,
-                    eventDate = dateTimeString,
-                    imageUrl = imageString,
-                    description = descriptionString
-                )
-                postsViewModel.updatePost(updatedPost) { success, messageRes ->
-                     if (success) {
-                         Toast.makeText(requireContext(), getString(R.string.report_updated), Toast.LENGTH_SHORT).show()
-                         dismiss()
-                     } else {
-                         Toast.makeText(requireContext(), getString(messageRes), Toast.LENGTH_SHORT).show()
-                     }
-                }
-            } else {
-                val newPost = Post(
-                    id = UUID.randomUUID().toString(),
-                    authorId = currentUserId,
-                    userName = authorName,
-                    authorProfileImageUrl = profilePicUrl,
-                    isLost = isLost,
-                    petType = animalType,
-                    contactNumber = contact,
-                    lastSeenLocation = locationString,
-                    eventDate = dateTimeString,
-                    createdAt = System.currentTimeMillis(),
-                    imageUrl = imageString,
-                    description = descriptionString
-                )
+            val newPost = Post(
+                id = UUID.randomUUID().toString(),
+                authorId = currentUserId,
+                userName = authorName,
+                authorProfileImageUrl = profilePicUrl,
+                isLost = isLost,
+                petType = animalType,
+                contactNumber = contact,
+                lastSeenLocation = locationString,
+                eventDate = dateTimeString,
+                createdAt = System.currentTimeMillis(),
+                imageUrl = imageString,
+                description = descriptionString
+            )
 
-                postsViewModel.addPost(newPost) { success, messageRes ->
-                    if (success) {
-                        Toast.makeText(requireContext(), getString(R.string.report_published), Toast.LENGTH_SHORT).show()
-                        dismiss()
-                    } else {
-                        Toast.makeText(requireContext(), getString(messageRes), Toast.LENGTH_SHORT).show()
-                    }
-                }
-            }
-        }
-    }
+            postsViewModel.addPost(newPost)
 
-    private fun updateToggleColors(checkedId: Int, lostButton: MaterialButton, foundButton: MaterialButton, lostColor: ColorStateList, foundColor: ColorStateList, grayTextColor: ColorStateList) {
-        when (checkedId) {
-            R.id.lostButton -> {
-                lostButton.strokeColor = lostColor
-                lostButton.setTextColor(lostColor)
-                foundButton.strokeColor = grayTextColor
-                foundButton.setTextColor(grayTextColor)
-            }
-            R.id.foundButton -> {
-                foundButton.strokeColor = foundColor
-                foundButton.setTextColor(foundColor)
-                lostButton.strokeColor = grayTextColor
-                lostButton.setTextColor(grayTextColor)
-            }
+            Toast.makeText(requireContext(), getString(R.string.report_published), Toast.LENGTH_SHORT).show()
+            dismiss()
         }
     }
 
