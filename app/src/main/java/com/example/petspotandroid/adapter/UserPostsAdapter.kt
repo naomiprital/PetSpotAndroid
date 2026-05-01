@@ -16,6 +16,7 @@ import com.squareup.picasso.Picasso
 
 class UserPostsAdapter(
     private var posts: List<Post>,
+    private val onItemClick: (Post) -> Unit,
     private val onEditClick: (Post) -> Unit,
     private val onDeleteClick: (Post) -> Unit,
     private val onResolveToggleClick: (Post) -> Unit
@@ -35,7 +36,7 @@ class UserPostsAdapter(
 
     override fun onBindViewHolder(holder: UserPostViewHolder, position: Int) {
         val post = posts[position]
-        holder.bind(post, onEditClick, onDeleteClick, onResolveToggleClick)
+        holder.bind(post, onItemClick, onEditClick, onDeleteClick, onResolveToggleClick)
     }
 
     override fun getItemCount(): Int = posts.size
@@ -55,6 +56,7 @@ class UserPostsAdapter(
         @SuppressLint("SetTextI18n")
         fun bind(
             post: Post,
+            onItemClick: (Post) -> Unit,
             onEditClick: (Post) -> Unit,
             onDeleteClick: (Post) -> Unit,
             onResolveToggleClick: (Post) -> Unit
@@ -130,6 +132,7 @@ class UserPostsAdapter(
             }
 
             btnResolve.setOnClickListener { onResolveToggleClick(post) }
+            itemView.setOnClickListener { onItemClick(post) }
         }
     }
 }
