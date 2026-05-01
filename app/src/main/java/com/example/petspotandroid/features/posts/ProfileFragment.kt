@@ -188,6 +188,9 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
             val lastName = etLastName.text.toString().trim()
             val phone = etPhone.text.toString().trim()
 
+            btnSaveProfile.text = getString(R.string.saving)
+            btnSaveProfile.isEnabled = false
+
             val imageBitmap: Bitmap? = if (isImageUpdated) {
                 (ivProfileImage.drawable as? BitmapDrawable)?.bitmap
             } else {
@@ -200,10 +203,15 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         authViewModel.updateProfileSuccess.observe(viewLifecycleOwner) { success ->
             if (success) {
                 ToastHelper.showCustomToast(requireView(), getString(R.string.profile_updated_successfully))
-                toggleEditMode(false, 
-                    btnEditProfile, btnCancelEdit, btnSaveProfile, 
+
+                btnSaveProfile.text = getString(R.string.save_changes)
+                btnSaveProfile.isEnabled = true
+
+                toggleEditMode(false,
+                    btnEditProfile, btnCancelEdit, btnSaveProfile,
                     tvUserName, llEditName, tvPhone, tilPhone,
                     ivCameraOverlay, vImageDimOverlay)
+
                 isImageUpdated = false
                 authViewModel.clearUpdateProfileStatus()
             }
@@ -212,6 +220,9 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         authViewModel.errorMessage.observe(viewLifecycleOwner) { message ->
             if (message != null) {
                 ToastHelper.showCustomToast(requireView(), message)
+
+                btnSaveProfile.text = getString(R.string.save_changes)
+                btnSaveProfile.isEnabled = true
             }
         }
 
@@ -245,13 +256,13 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         btnEdit.visibility = if (isEdit) View.GONE else View.VISIBLE
         btnCancel.visibility = if (isEdit) View.VISIBLE else View.GONE
         btnSave.visibility = if (isEdit) View.VISIBLE else View.GONE
-        
+
         tvName.visibility = if (isEdit) View.GONE else View.VISIBLE
         editName.visibility = if (isEdit) View.GONE else View.VISIBLE
         
         tvPh.visibility = if (isEdit) View.GONE else View.VISIBLE
-        tilPh.visibility = if (isEdit) View.GONE else View.VISIBLE
-        
+        tilPh.visibility = if (isEdit) View.VISIBLE else View.GONE
+
         cameraOverlay.visibility = if (isEdit) View.VISIBLE else View.GONE
         dimOverlay.visibility = if (isEdit) View.VISIBLE else View.GONE
     }

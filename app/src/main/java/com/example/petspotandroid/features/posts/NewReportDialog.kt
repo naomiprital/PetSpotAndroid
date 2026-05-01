@@ -249,7 +249,7 @@ class NewReportDialog : DialogFragment() {
             }
 
             publishButton.isEnabled = false
-            publishButton.text = if (editingPost != null) "Saving..." else "Publishing..."
+            publishButton.text = if (editingPost != null) getString(R.string.saving) else getString(R.string.publishing)
 
             val postId = editingPost?.id ?: UUID.randomUUID().toString()
             val createdAt = editingPost?.createdAt ?: System.currentTimeMillis()
