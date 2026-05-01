@@ -1,5 +1,7 @@
 package com.example.petspotandroid.ui
 
+import android.annotation.SuppressLint
+import android.content.res.ColorStateList
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -168,9 +170,7 @@ class NewReportDialog : DialogFragment() {
             val locationString = locationInput.text.toString()
             val dateTimeString = dateTime.text.toString()
             val descriptionString = descriptionInput.text.toString()
-
             val imageString = selectedImageUri?.toString() ?: editingPost?.imageUrl ?: ""
-            val descriptionString = view.findViewById<TextInputEditText>(R.id.description).text.toString()
 
             if (locationString.isBlank() || descriptionString.isBlank() || contact.isBlank()) {
                 Toast.makeText(requireContext(), getString(R.string.error_missing_fields), Toast.LENGTH_SHORT).show()
@@ -248,6 +248,23 @@ class NewReportDialog : DialogFragment() {
             val width = (displayMetrics.widthPixels * 0.90).toInt()
             val height = (displayMetrics.heightPixels * 0.90).toInt()
             dialog.window?.setLayout(width, height)
+        }
+    }
+
+    private fun updateToggleColors(checkedId: Int, lostButton: MaterialButton, foundButton: MaterialButton, lostColor: ColorStateList, foundColor: ColorStateList, grayTextColor: ColorStateList) {
+        when (checkedId) {
+            R.id.lostButton -> {
+                lostButton.strokeColor = lostColor
+                lostButton.setTextColor(lostColor)
+                foundButton.strokeColor = grayTextColor
+                foundButton.setTextColor(grayTextColor)
+            }
+            R.id.foundButton -> {
+                foundButton.strokeColor = foundColor
+                foundButton.setTextColor(foundColor)
+                lostButton.strokeColor = grayTextColor
+                lostButton.setTextColor(grayTextColor)
+            }
         }
     }
 }
