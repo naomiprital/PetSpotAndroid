@@ -1,6 +1,7 @@
 package com.example.petspotandroid.data.firebase
 
 import android.graphics.Bitmap
+import android.net.Uri
 import com.example.petspotandroid.base.StringCompletion
 import com.example.petspotandroid.data.models.User
 import com.google.firebase.Firebase
@@ -33,5 +34,22 @@ class FirebaseStorageModel {
         val imagesUserRef = storageRef.child("images/${user.id}/userProfile.jpg")
 
         uploadImage(image, imagesUserRef, completion)
+    }
+
+    fun uploadPostImage(imageUri: Uri, postId: String, completion: StringCompletion) {
+        val storageRef = storage.reference
+        val imagesPostRef = storageRef.child("post_images/${postId}.jpg")
+
+        val uploadTask = imagesPostRef.putFile(imageUri)
+
+        uploadTask.addOnFailureListener { exception ->
+            completion(null)
+        }.addOnSuccessListener {
+            imagesPostRef.downloadUrl.addOnSuccessListener { uri ->
+                completion(uri.toString())
+            }.addOnFailureListener { exception ->
+                completion(null)
+            }
+        }
     }
 }
