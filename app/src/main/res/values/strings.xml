@@ -70,6 +70,8 @@
     <string name="dropdown_icon">Dropdown icon</string>
     <string name="write_a_helpful_comment">Write a helpful comment…</string>
     <string name="send_comment_button">Send comment button</string>
+    <string name="light_bulb_emoji">💡</string>
+    <string name="pet_fact_of_the_day">PET FACT OF THE DAY</string>
 
     <string-array name="filter_types_array">
         <item>All Types</item>
@@ -91,4 +93,10 @@
         <item>Hamster</item>
         <item>Horse</item>
     </string-array>
+    <string-array name="supported_api_animals">
+        <item>dog</item>
+        <item>cat</item>
+        <item>bird</item>
+    </string-array>
+
 </resources>

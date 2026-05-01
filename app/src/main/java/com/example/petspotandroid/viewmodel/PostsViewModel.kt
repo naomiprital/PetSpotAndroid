@@ -4,10 +4,12 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
 import com.example.petspotandroid.dao.AppLocalDb
 import com.example.petspotandroid.data.models.Post
+import com.example.petspotandroid.data.repository.FactRepository
 import com.example.petspotandroid.data.repository.PostRepository
 import kotlinx.coroutines.launch
 
@@ -26,6 +28,10 @@ class PostsViewModel(application: Application) : AndroidViewModel(application) {
     private var currentAnimal: String? = null
     private var currentSort = SortOrder.NEWEST_FIRST
     private var currentSearchQuery = ""
+
+    private val factRepository = FactRepository()
+    private val _dailyFact = MutableLiveData<String?>()
+    val dailyFact: LiveData<String?> = _dailyFact
 
     init {
         refreshPosts()
@@ -118,5 +124,14 @@ class PostsViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         _filteredPosts.value = result
+    }
+
+
+
+    fun loadDailyFact(supportedAnimals: List<String>) {
+        viewModelScope.launch {
+            val fact = factRepository.getDailyFact(supportedAnimals)
+            _dailyFact.postValue(fact)
+        }
     }
 }
