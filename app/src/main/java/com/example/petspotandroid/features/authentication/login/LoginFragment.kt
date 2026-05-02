@@ -1,85 +1,106 @@
 package com.example.petspotandroid.features.authentication.login
 
+import android.annotation.SuppressLint
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
-import android.widget.TextView
+import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
+import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.example.petspotandroid.R
-import com.example.petspotandroid.base.ToastHelper
-import com.example.petspotandroid.dao.AppLocalDb
+import com.example.petspotandroid.dao.AppLocalDB
 import com.example.petspotandroid.data.repository.auth.AuthRepository
+import com.example.petspotandroid.databinding.FragmentLoginBinding
 import com.example.petspotandroid.features.authentication.auth.AuthViewModel
-import com.google.android.material.button.MaterialButton
-import com.google.android.material.textfield.TextInputEditText
+import com.example.petspotandroid.features.authentication.auth.AuthViewModelFactory
 
-class LoginFragment : Fragment(R.layout.fragment_login) {
-    private lateinit var viewModel: AuthViewModel
+class LoginFragment : Fragment() {
+
+    private var binding: FragmentLoginBinding? = null
+
+    private val viewModel: AuthViewModel by viewModels {
+        val userDao = AppLocalDB.db.userDao
+        val repository = AuthRepository(userDao)
+        AuthViewModelFactory(repository)
+    }
+
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        binding = FragmentLoginBinding.inflate(inflater, container, false)
+        return binding?.root
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val repository = AuthRepository(
-            AppLocalDb.Companion.getDatabase(requireContext()).userDao()
-        )
+        setupObservers()
+        setupListeners()
+    }
 
-        val factory = object : ViewModelProvider.Factory {
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                @Suppress("UNCHECKED_CAST")
-                return AuthViewModel(repository) as T
-            }
-        }
-
-        viewModel = ViewModelProvider(requireActivity(), factory)[AuthViewModel::class.java]
-
-        val etEmail = view.findViewById<TextInputEditText>(R.id.etEmail)
-        val etPassword = view.findViewById<TextInputEditText>(R.id.etPassword)
-        val btnLogin = view.findViewById<MaterialButton>(R.id.btnLogin)
-        val tvForgotPassword = view.findViewById<TextView>(R.id.tvForgotPassword)
-
-        btnLogin.setOnClickListener {
-            val email = etEmail.text.toString().trim()
-            val password = etPassword.text.toString().trim()
+    private fun setupListeners() {
+        binding?.btnLogin?.setOnClickListener {
+            val email = binding?.etEmail?.text.toString().trim()
+            val password = binding?.etPassword?.text.toString().trim()
 
             if (email.isNotEmpty() && password.isNotEmpty()) {
                 viewModel.login(email, password)
             } else {
-                ToastHelper.showCustomToast(view, "Please fill out all fields")
+                Toast.makeText(requireContext(), "Please fill out all fields", Toast.LENGTH_SHORT).show()
             }
         }
 
-        tvForgotPassword.visibility = View.VISIBLE
-        tvForgotPassword.setOnClickListener {
+        binding?.tvForgotPassword?.setOnClickListener {
             findNavController().navigate(R.id.action_authFragment_to_forgotPasswordFragment)
         }
+    }
 
-        viewModel.resetPasswordSuccess.observe(viewLifecycleOwner) { success ->
-            if (success) {
-                ToastHelper.showCustomToast(requireView(), "Password reset email sent!")
-                viewModel.clearResetPasswordStatus()
-            }
-        }
-
+    private fun setupObservers() {
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
-            btnLogin.isEnabled = !isLoading
-            btnLogin.text = if (isLoading) "Logging in..." else "Welcome Back!"
+            if (isLoading) {
+                disableLoginButton()
+            } else {
+                enableLoginButton()
+            }
         }
 
         viewModel.user.observe(viewLifecycleOwner) { firebaseUser ->
             if (firebaseUser != null) {
-                val navController = parentFragment?.findNavController()
-                if (navController?.currentDestination?.id != R.id.postsListFragment) {
-                    navController?.navigate(R.id.action_global_postsListFragment)
-                }
+                findNavController().navigate(R.id.action_global_postsListFragment)
             }
         }
 
         viewModel.errorMessage.observe(viewLifecycleOwner) { message ->
-            if (!message.isNullOrEmpty()) {
-                ToastHelper.showCustomToast(requireView(), message)
+            message?.let {
+                Toast.makeText(requireContext(), it, Toast.LENGTH_SHORT).show()
             }
         }
+
+        viewModel.resetPasswordSuccess.observe(viewLifecycleOwner) { success ->
+            if (success) {
+                Toast.makeText(requireContext(), "Password reset email sent!", Toast.LENGTH_SHORT).show()
+                viewModel.clearResetPasswordStatus()
+            }
+        }
+    }
+
+    @SuppressLint("SetTextI18n")
+    private fun disableLoginButton() {
+        binding?.btnLogin?.isEnabled = false
+        binding?.btnLogin?.text = "Logging in..."
+    }
+
+    @SuppressLint("SetTextI18n")
+    private fun enableLoginButton() {
+        binding?.btnLogin?.isEnabled = true
+        binding?.btnLogin?.text = "Welcome Back!"
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        binding = null
     }
 }

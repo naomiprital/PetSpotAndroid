@@ -28,6 +28,10 @@ class UserPostsAdapter(
         notifyDataSetChanged()
     }
 
+    fun getPosts(): List<Post> {
+        return posts
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UserPostViewHolder {
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_user_post, parent, false)
@@ -76,63 +80,66 @@ class UserPostsAdapter(
             statusView.backgroundTintList = ColorStateList.valueOf(statusBgColor)
 
             if (post.isResolved) {
-                badgeResolved.visibility = View.VISIBLE
-
-                val resolvedBg = ContextCompat.getColor(context, R.color.resolved_bg)
-                val resolvedText = ContextCompat.getColor(context, R.color.resolved_text)
-                val resolvedStroke = ContextCompat.getColor(context, R.color.resolved_stroke)
-
-                btnResolve.text = context.getString(R.string.mark_as_unresolved)
-                btnResolve.setIconResource(R.drawable.ic_undo)
-                btnResolve.backgroundTintList = ColorStateList.valueOf(resolvedBg)
-                btnResolve.setTextColor(resolvedText)
-                btnResolve.iconTint = ColorStateList.valueOf(resolvedText)
-                btnResolve.setStrokeColor(ColorStateList.valueOf(resolvedStroke))
-
-                btnEdit.isEnabled = false
-                btnDelete.isEnabled = false
-                llContentDimmed.alpha = 0.5f
-                imageView.alpha = 0.5f
-
+                applyResolvedState(context)
                 btnEdit.setOnClickListener(null)
                 btnDelete.setOnClickListener(null)
             } else {
-                badgeResolved.visibility = View.GONE
-
-                val foundBg = ContextCompat.getColor(context, R.color.status_found_bg)
-                val unresolvedText = ContextCompat.getColor(context, R.color.unresolved_text)
-                val unresolvedStroke = ContextCompat.getColor(context, R.color.unresolved_stroke)
-
-                btnResolve.text = context.getString(R.string.mark_listing_as_resolved)
-                btnResolve.setIconResource(R.drawable.ic_check_circle)
-                btnResolve.backgroundTintList = ColorStateList.valueOf(foundBg)
-                btnResolve.setTextColor(unresolvedText)
-                btnResolve.iconTint = ColorStateList.valueOf(unresolvedText)
-                btnResolve.setStrokeColor(ColorStateList.valueOf(unresolvedStroke))
-
-                btnEdit.isEnabled = true
-                btnDelete.isEnabled = true
-                llContentDimmed.alpha = 1.0f
-                imageView.alpha = 1.0f
-
+                applyUnresolvedState(context)
                 btnEdit.setOnClickListener { onEditClick(post) }
                 btnDelete.setOnClickListener { onDeleteClick(post) }
             }
 
-            if (post.imageUrl.isNotEmpty()) {
-                Picasso.get()
-                    .load(post.imageUrl)
-                    .fit()
-                    .centerCrop()
-                    .placeholder(android.R.drawable.ic_menu_camera)
-                    .error(android.R.drawable.ic_menu_camera)
-                    .into(imageView)
-            } else {
-                imageView.setImageResource(android.R.drawable.ic_menu_camera)
-            }
+            val imageUrl = if (post.imageUrl?.isNotEmpty() == true) post.imageUrl else null
+            Picasso.get()
+                .load(imageUrl)
+                .fit()
+                .centerCrop()
+                .placeholder(android.R.drawable.ic_menu_camera)
+                .error(android.R.drawable.ic_menu_camera)
+                .into(imageView)
 
             btnResolve.setOnClickListener { onResolveToggleClick(post) }
             itemView.setOnClickListener { onItemClick(post) }
+        }
+
+        private fun applyResolvedState(context: android.content.Context) {
+            badgeResolved.visibility = View.VISIBLE
+
+            val resolvedBg = ContextCompat.getColor(context, R.color.resolved_bg)
+            val resolvedText = ContextCompat.getColor(context, R.color.resolved_text)
+            val resolvedStroke = ContextCompat.getColor(context, R.color.resolved_stroke)
+
+            btnResolve.text = context.getString(R.string.mark_as_unresolved)
+            btnResolve.setIconResource(R.drawable.ic_undo)
+            btnResolve.backgroundTintList = ColorStateList.valueOf(resolvedBg)
+            btnResolve.setTextColor(resolvedText)
+            btnResolve.iconTint = ColorStateList.valueOf(resolvedText)
+            btnResolve.setStrokeColor(ColorStateList.valueOf(resolvedStroke))
+
+            btnEdit.isEnabled = false
+            btnDelete.isEnabled = false
+            llContentDimmed.alpha = 0.5f
+            imageView.alpha = 0.5f
+        }
+
+        private fun applyUnresolvedState(context: android.content.Context) {
+            badgeResolved.visibility = View.GONE
+
+            val foundBg = ContextCompat.getColor(context, R.color.status_found_bg)
+            val unresolvedText = ContextCompat.getColor(context, R.color.unresolved_text)
+            val unresolvedStroke = ContextCompat.getColor(context, R.color.unresolved_stroke)
+
+            btnResolve.text = context.getString(R.string.mark_listing_as_resolved)
+            btnResolve.setIconResource(R.drawable.ic_check_circle)
+            btnResolve.backgroundTintList = ColorStateList.valueOf(foundBg)
+            btnResolve.setTextColor(unresolvedText)
+            btnResolve.iconTint = ColorStateList.valueOf(unresolvedText)
+            btnResolve.setStrokeColor(ColorStateList.valueOf(unresolvedStroke))
+
+            btnEdit.isEnabled = true
+            btnDelete.isEnabled = true
+            llContentDimmed.alpha = 1.0f
+            imageView.alpha = 1.0f
         }
     }
 }

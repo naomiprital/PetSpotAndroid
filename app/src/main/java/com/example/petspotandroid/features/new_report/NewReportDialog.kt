@@ -1,6 +1,5 @@
 package com.example.petspotandroid.features.new_report
 
-import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.res.ColorStateList
 import android.graphics.Color
@@ -10,402 +9,305 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
-import android.widget.AutoCompleteTextView
-import android.widget.ImageButton
-import android.widget.ImageView
-import android.widget.LinearLayout
-import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.fragment.app.DialogFragment
-import androidx.lifecycle.ViewModelProvider
+import androidx.fragment.app.viewModels
 import com.example.petspotandroid.R
-import com.example.petspotandroid.data.models.FirebaseStorageModel
-import com.example.petspotandroid.model.Post
+import com.example.petspotandroid.dao.AppLocalDB
+import com.example.petspotandroid.databinding.FragmentNewReportBinding
 import com.example.petspotandroid.features.authentication.auth.AuthViewModel
-import com.example.petspotandroid.features.posts_list.PostsViewModel
-import com.google.android.material.button.MaterialButton
-import com.google.android.material.button.MaterialButtonToggleGroup
+import com.example.petspotandroid.features.authentication.auth.AuthViewModelFactory
+import com.example.petspotandroid.data.repository.auth.AuthRepository
+import com.example.petspotandroid.model.Post
 import com.google.android.material.datepicker.MaterialDatePicker
-import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
 import java.io.File
 import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
-import java.util.UUID
+import java.util.*
 
 class NewReportDialog : DialogFragment() {
+
+    private var _binding: FragmentNewReportBinding? = null
+    private val binding get() = _binding!!
+
     private var selectedImageUri: Uri? = null
     private var tempCameraUri: Uri? = null
-
-    private lateinit var postsViewModel: PostsViewModel
-    private lateinit var authViewModel: AuthViewModel
-
     private var editingPost: Post? = null
 
+    private val newReportViewModel: NewReportViewModel by viewModels()
+
+    private val authViewModel: AuthViewModel by viewModels {
+        val repository = AuthRepository(AppLocalDB.db.userDao)
+        AuthViewModelFactory(repository)
+    }
+
     companion object {
-        private const val ARG_POST = "arg_post"
+        private const val ARG_POST_ID = "arg_post_id"
 
-        fun newInstance(post: Post? = null): NewReportDialog {
-            val fragment = NewReportDialog()
-            post?.let {
-                val args = Bundle()
-                args.putSerializable(ARG_POST, it)
-                fragment.arguments = args
+        fun newInstance(postId: String? = null): NewReportDialog {
+            return NewReportDialog().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_POST_ID, postId)
+                }
             }
-            return fragment
         }
     }
 
-    private val pickMedia =
-        registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-            val uploadText = view?.findViewById<TextView>(R.id.uploadText)
-            val cameraIcon = view?.findViewById<ImageView>(R.id.cameraIcon)
-
-            if (uri != null) {
-                selectedImageUri = uri
-                uploadText?.text = getString(R.string.photo_selected)
-                uploadText?.setTextColor(
-                    ContextCompat.getColor(
-                        requireContext(),
-                        R.color.status_found
-                    )
-                )
-                cameraIcon?.imageTintList = ColorStateList.valueOf(Color.BLACK)
-            }
-        }
-
-    private val takePicture =
-        registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-            val uploadText = view?.findViewById<TextView>(R.id.uploadText)
-            val cameraIcon = view?.findViewById<ImageView>(R.id.cameraIcon)
-
-            if (success && tempCameraUri != null) {
-                selectedImageUri = tempCameraUri
-                uploadText?.text = getString(R.string.photo_selected)
-                uploadText?.setTextColor(
-                    ContextCompat.getColor(
-                        requireContext(),
-                        R.color.status_found
-                    )
-                )
-                cameraIcon?.imageTintList = ColorStateList.valueOf(Color.BLACK)
-            }
-        }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        editingPost = arguments?.getSerializable(ARG_POST) as? Post
+    private val pickMedia = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        uri?.let { handleImageSelection(it) }
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        return inflater.inflate(R.layout.fragment_new_report, container, false)
+    private val takePicture = registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+        if (success) tempCameraUri?.let { handleImageSelection(it) }
     }
 
-    @SuppressLint("SetTextI18n")
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        _binding = FragmentNewReportBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        postsViewModel = ViewModelProvider(requireActivity())[PostsViewModel::class.java]
-        authViewModel = ViewModelProvider(requireActivity())[AuthViewModel::class.java]
+        val postId = arguments?.getString(ARG_POST_ID)
 
-        val dialogTitle = view.findViewById<TextView>(R.id.dialogTitle)
-        val closeButton = view.findViewById<ImageButton>(R.id.closeButton)
-        closeButton.setOnClickListener { dismiss() }
+        setupAnimalDropdown()
 
-        val animalTypes =
-            resources.getStringArray(R.array.filter_animals_array).drop(1).toTypedArray()
-        val adapter =
-            ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, animalTypes)
-        val dropdownAnimalType = view.findViewById<AutoCompleteTextView>(R.id.dropdownAnimalType)
-        dropdownAnimalType.setAdapter(adapter)
-
-        val toggleGroup = view.findViewById<MaterialButtonToggleGroup>(R.id.toggleGroupListingType)
-        val lostButton = view.findViewById<MaterialButton>(R.id.lostButton)
-        val foundButton = view.findViewById<MaterialButton>(R.id.foundButton)
-
-        val lostColor =
-            ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.status_lost))
-        val foundColor =
-            ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.status_found))
-        val grayTextColor =
-            ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.gray_text))
-
-        val contactInput = view.findViewById<TextInputEditText>(R.id.contactNumber)
-        val locationInput = view.findViewById<TextInputEditText>(R.id.location)
-        val dateTime = view.findViewById<TextInputEditText>(R.id.dateTime)
-        val descriptionInput = view.findViewById<TextInputEditText>(R.id.description)
-        val publishButton = view.findViewById<MaterialButton>(R.id.publishButton)
-        val uploadText = view.findViewById<TextView>(R.id.uploadText)
-        val cameraIcon = view.findViewById<ImageView>(R.id.cameraIcon)
-
-        val dateTimeFormat = getString(R.string.date_format_with_at)
-
-        if (editingPost != null) {
-            val post = editingPost!!
-            dialogTitle.text = getString(R.string.edit_report)
-            publishButton.text = getString(R.string.save_changes)
-
-            toggleGroup.check(if (post.isLost) R.id.lostButton else R.id.foundButton)
-            dropdownAnimalType.setText(post.petType, false)
-            contactInput.setText(post.contactNumber)
-            locationInput.setText(post.lastSeenLocation)
-            dateTime.setText(post.eventDate)
-            descriptionInput.setText(post.description)
-
-            if (post.imageUrl.isNotEmpty()) {
-                uploadText.text = getString(R.string.photo_selected)
-                uploadText.setTextColor(
-                    ContextCompat.getColor(
-                        requireContext(),
-                        R.color.status_found
-                    )
-                )
-                cameraIcon.imageTintList = ColorStateList.valueOf(Color.BLACK)
+        if (postId != null) {
+            newReportViewModel.getPost(postId).observe(viewLifecycleOwner) { post ->
+                post?.let {
+                    editingPost = it
+                    setupUIWithPost(it)
+                }
             }
         } else {
-            toggleGroup.check(R.id.lostButton)
-            dropdownAnimalType.setText(animalTypes[0], false)
+            setupUIForNewReport()
+        }
 
-            val currentCalendar = Calendar.getInstance()
-            val defaultFormat = SimpleDateFormat(dateTimeFormat, Locale.getDefault())
-            dateTime.setText(defaultFormat.format(currentCalendar.time))
+        setupListeners()
+        setupObservers()
+    }
 
-            authViewModel.userData.observe(viewLifecycleOwner) { user ->
-                if (user != null && contactInput.text.isNullOrBlank()) {
-                    contactInput.setText(user.phone)
-                }
+    private fun setupAnimalDropdown() {
+        val animalTypes = resources.getStringArray(R.array.filter_animals_array).drop(1).toTypedArray()
+        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, animalTypes)
+        binding.dropdownAnimalType.setAdapter(adapter)
+
+        binding.dropdownAnimalType.setOnClickListener {
+            binding.dropdownAnimalType.showDropDown()
+        }
+    }
+
+    private fun setupListeners() {
+        binding.closeButton.setOnClickListener { dismiss() }
+        binding.toggleGroupListingType.addOnButtonCheckedListener { _, id, isChecked ->
+            if (isChecked) updateToggleColors(id)
+        }
+        binding.uploadImageButton.setOnClickListener { showImageSourceDialog() }
+        binding.dateTime.setOnClickListener { showDateTimePicker() }
+        binding.publishButton.setOnClickListener { handlePublish() }
+    }
+
+    private fun setupObservers() {
+        newReportViewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
+            binding.publishButton.isEnabled = !isLoading
+            binding.publishButton.text = when {
+                isLoading && editingPost != null -> getString(R.string.saving)
+                isLoading -> getString(R.string.publishing)
+                editingPost != null -> getString(R.string.save_changes)
+                else -> getString(R.string.publish_report)
             }
         }
 
-        updateToggleColors(
-            toggleGroup.checkedButtonId,
-            lostButton,
-            foundButton,
-            lostColor,
-            foundColor,
-            grayTextColor
+        if (editingPost == null) {
+            authViewModel.userData.observe(viewLifecycleOwner) { user ->
+                if (user != null && binding.contactNumber.text.isNullOrBlank()) {
+                    binding.contactNumber.setText(user.phone)
+                }
+            }
+        }
+    }
+
+    private fun handlePublish() {
+        val location = binding.location.text.toString()
+        val description = binding.description.text.toString()
+        val contact = binding.contactNumber.text.toString()
+
+        if (location.isBlank() || description.isBlank() || contact.isBlank()) {
+            Toast.makeText(requireContext(), getString(R.string.error_missing_fields), Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val userData = authViewModel.userData.value ?: return
+
+        val post = Post(
+            id = editingPost?.id ?: UUID.randomUUID().toString(),
+            authorId = userData.id,
+            userName = "${userData.firstName} ${userData.lastName}",
+            authorProfileImageUrl = userData.avatarUrl,
+            description = description,
+            imageUrl = editingPost?.imageUrl,
+            createdAt = editingPost?.createdAt ?: System.currentTimeMillis(),
+            isLost = binding.toggleGroupListingType.checkedButtonId == R.id.lostButton,
+            isResolved = editingPost?.isResolved ?: false,
+            petType = binding.dropdownAnimalType.text.toString(),
+            lastSeenLocation = location,
+            contactNumber = contact,
+            eventDate = binding.dateTime.text.toString(),
+            lastUpdated = editingPost?.lastUpdated
         )
 
-        toggleGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
-            if (isChecked) {
-                updateToggleColors(
-                    checkedId,
-                    lostButton,
-                    foundButton,
-                    lostColor,
-                    foundColor,
-                    grayTextColor
-                )
+        val imageBytes = selectedImageUri?.let { getCompressedImageBytes(it) }
+
+        if (editingPost != null) {
+            newReportViewModel.updatePost(post, imageBytes) { success ->
+                if (success) handleSuccess(R.string.report_updated) else handleError()
+            }
+        } else {
+            newReportViewModel.addPost(post, imageBytes) { success ->
+                if (success) handleSuccess(R.string.report_published) else handleError()
             }
         }
+    }
 
-        val uploadImageButton = view.findViewById<LinearLayout>(R.id.uploadImageButton)
-        uploadImageButton.setOnClickListener {
-            showImageSourceDialog()
-        }
+    private fun handleSuccess(messageRes: Int) {
+        if (!isAdded) return
 
-        dateTime.setOnClickListener {
-            showDateTimePicker(dateTime, dateTimeFormat)
-        }
+        Toast.makeText(requireContext(), getString(messageRes), Toast.LENGTH_SHORT).show()
+        dismiss()
+    }
 
-        publishButton.setOnClickListener {
-            val isLost = toggleGroup.checkedButtonId == R.id.lostButton
-            val animalType = dropdownAnimalType.text.toString()
-            val contact = contactInput.text.toString()
-            val locationString = locationInput.text.toString()
-            val dateTimeString = dateTime.text.toString()
-            val descriptionString = descriptionInput.text.toString()
-            val imageString = selectedImageUri?.toString() ?: editingPost?.imageUrl ?: ""
+    private fun handleError() {
+        if (!isAdded) return
 
-            if (locationString.isBlank() || descriptionString.isBlank() || contact.isBlank()) {
-                Toast.makeText(
-                    requireContext(),
-                    getString(R.string.error_missing_fields),
-                    Toast.LENGTH_SHORT
-                ).show()
-                return@setOnClickListener
-            }
+        Toast.makeText(requireContext(), "Operation failed. Please try again.", Toast.LENGTH_SHORT).show()
+    }
 
-            val currentUserData = authViewModel.userData.value
-            val currentUserId = authViewModel.user.value?.uid
-            val profilePicUrl = currentUserData?.avatarUrl ?: ""
+    private fun handleImageSelection(uri: Uri) {
+        selectedImageUri = uri
+        updatePhotoSelectionUI()
+    }
 
-            if (currentUserId == null || currentUserData == null) {
-                Toast.makeText(
-                    requireContext(),
-                    getString(R.string.error_user_not_logged_in),
-                    Toast.LENGTH_SHORT
-                ).show()
-                return@setOnClickListener
-            }
-
-            publishButton.isEnabled = false
-            publishButton.text = if (editingPost != null) getString(R.string.saving) else getString(
-                R.string.publishing)
-
-            val postId = editingPost?.id ?: UUID.randomUUID().toString()
-            val createdAt = editingPost?.createdAt ?: System.currentTimeMillis()
-            val authorName = "${currentUserData.firstName} ${currentUserData.lastName}"
-
-            val savePostAction = { finalImageUrl: String ->
-                val post = Post(
-                    id = postId,
-                    authorId = currentUserId,
-                    userName = authorName,
-                    authorProfileImageUrl = profilePicUrl,
-                    isLost = isLost,
-                    petType = animalType,
-                    contactNumber = contact,
-                    lastSeenLocation = locationString,
-                    eventDate = dateTimeString,
-                    createdAt = createdAt,
-                    imageUrl = finalImageUrl,
-                    description = descriptionString
-                )
-
-                if (editingPost != null) {
-                    postsViewModel.updatePost(post) { success, messageRes ->
-                        if (success) {
-                            Toast.makeText(requireContext(), getString(R.string.report_updated), Toast.LENGTH_SHORT).show()
-                            dismiss()
-                        } else {
-                            publishButton.isEnabled = true
-                            publishButton.text = getString(R.string.save_changes)
-                            Toast.makeText(requireContext(), getString(messageRes), Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                } else {
-                    postsViewModel.addPost(post) { success, messageRes ->
-                        if (success) {
-                            Toast.makeText(requireContext(), getString(R.string.report_published), Toast.LENGTH_SHORT).show()
-                            dismiss()
-                        } else {
-                            publishButton.isEnabled = true
-                            publishButton.text = getString(R.string.publish_report)
-                            Toast.makeText(requireContext(), getString(messageRes), Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                }
-            }
-
-            if (selectedImageUri != null) {
-                val storageModel = FirebaseStorageModel()
-                storageModel.uploadPostImage(selectedImageUri!!, postId) { uploadedUrl ->
-                    if (uploadedUrl != null) {
-                        savePostAction(uploadedUrl)
-                    } else {
-                        publishButton.isEnabled = true
-                        publishButton.text = if (editingPost != null) getString(R.string.save_changes) else getString(
-                            R.string.publish_report)
-                        Toast.makeText(
-                            requireContext(),
-                            "Failed to upload image. Please try again.",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
-                }
-            } else {
-                savePostAction(editingPost?.imageUrl ?: "")
-            }
-        }
+    private fun updatePhotoSelectionUI() {
+        binding.uploadText.text = getString(R.string.photo_selected)
+        binding.uploadText.setTextColor(ContextCompat.getColor(requireContext(), R.color.status_found))
+        binding.cameraIcon.imageTintList = ColorStateList.valueOf(Color.BLACK)
     }
 
     private fun showImageSourceDialog() {
         val options = arrayOf("Take Photo", "Choose from Gallery")
-
         AlertDialog.Builder(requireContext())
             .setTitle("Select Image Source")
             .setItems(options) { _, which ->
-                if (which == 0) {
-                    launchCamera()
-                } else {
-                    pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                }
-            }
-            .show()
+                if (which == 0) launchCamera()
+                else pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+            }.show()
     }
 
     private fun launchCamera() {
-        val photoFile =
-            File(requireContext().cacheDir, "camera_image_${System.currentTimeMillis()}.jpg")
-
-        tempCameraUri = FileProvider.getUriForFile(
-            requireContext(),
-            "${requireContext().packageName}.fileprovider",
-            photoFile
-        )
-
+        val photoFile = File(requireContext().cacheDir, "camera_image_${System.currentTimeMillis()}.jpg")
+        tempCameraUri = FileProvider.getUriForFile(requireContext(), "${requireContext().packageName}.fileprovider", photoFile)
         takePicture.launch(tempCameraUri)
     }
 
-    private fun showDateTimePicker(editText: TextInputEditText, formatString: String) {
-        val datePicker = MaterialDatePicker.Builder.datePicker()
-            .setTitleText(getString(R.string.select_date))
-            .build()
-
+    private fun showDateTimePicker() {
+        val datePicker = MaterialDatePicker.Builder.datePicker().setTitleText(getString(R.string.select_date)).build()
         datePicker.addOnPositiveButtonClickListener { dateSelection ->
-            val timePicker = MaterialTimePicker.Builder()
-                .setTimeFormat(TimeFormat.CLOCK_12H)
-                .setTitleText(getString(R.string.select_time))
-                .build()
-
+            val timePicker = MaterialTimePicker.Builder().setTimeFormat(TimeFormat.CLOCK_12H).setTitleText(getString(R.string.select_time)).build()
             timePicker.addOnPositiveButtonClickListener {
-                val calendar = Calendar.getInstance()
-                calendar.timeInMillis = dateSelection
-                calendar.set(Calendar.HOUR_OF_DAY, timePicker.hour)
-                calendar.set(Calendar.MINUTE, timePicker.minute)
-
-                val format = SimpleDateFormat(formatString, Locale.getDefault())
-                editText.setText(format.format(calendar.time))
+                val calendar = Calendar.getInstance().apply {
+                    timeInMillis = dateSelection
+                    set(Calendar.HOUR_OF_DAY, timePicker.hour)
+                    set(Calendar.MINUTE, timePicker.minute)
+                }
+                val format = SimpleDateFormat(getString(R.string.date_format_with_at), Locale.getDefault())
+                binding.dateTime.setText(format.format(calendar.time))
             }
             timePicker.show(parentFragmentManager, "TimePicker")
         }
         datePicker.show(parentFragmentManager, "DatePicker")
     }
 
-    override fun onStart() {
-        super.onStart()
-        val dialog = dialog
-        if (dialog != null) {
-            dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-            val displayMetrics = resources.displayMetrics
-            val width = (displayMetrics.widthPixels * 0.90).toInt()
-            val height = (displayMetrics.heightPixels * 0.90).toInt()
-            dialog.window?.setLayout(width, height)
+    private fun updateToggleColors(checkedId: Int) {
+        val lostColor = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.status_lost))
+        val foundColor = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.status_found))
+        val grayColor = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.gray_text))
+
+        if (checkedId == R.id.lostButton) {
+            binding.lostButton.strokeColor = lostColor
+            binding.lostButton.setTextColor(lostColor)
+            binding.foundButton.strokeColor = grayColor
+            binding.foundButton.setTextColor(grayColor)
+        } else {
+            binding.foundButton.strokeColor = foundColor
+            binding.foundButton.setTextColor(foundColor)
+            binding.lostButton.strokeColor = grayColor
+            binding.lostButton.setTextColor(grayColor)
         }
     }
 
-    private fun updateToggleColors(
-        checkedId: Int,
-        lostButton: MaterialButton,
-        foundButton: MaterialButton,
-        lostColor: ColorStateList,
-        foundColor: ColorStateList,
-        grayTextColor: ColorStateList
-    ) {
-        when (checkedId) {
-            R.id.lostButton -> {
-                lostButton.strokeColor = lostColor
-                lostButton.setTextColor(lostColor)
-                foundButton.strokeColor = grayTextColor
-                foundButton.setTextColor(grayTextColor)
-            }
+    private fun setupUIWithPost(post: Post) {
+        binding.dialogTitle.text = getString(R.string.edit_report)
+        binding.publishButton.text = getString(R.string.save_changes)
+        binding.toggleGroupListingType.check(if (post.isLost) R.id.lostButton else R.id.foundButton)
+        updateToggleColors(binding.toggleGroupListingType.checkedButtonId)
 
-            R.id.foundButton -> {
-                foundButton.strokeColor = foundColor
-                foundButton.setTextColor(foundColor)
-                lostButton.strokeColor = grayTextColor
-                lostButton.setTextColor(grayTextColor)
+        binding.dropdownAnimalType.setText(post.petType, false)
+        binding.contactNumber.setText(post.contactNumber)
+        binding.location.setText(post.lastSeenLocation)
+        binding.dateTime.setText(post.eventDate)
+        binding.description.setText(post.description)
+
+        if (post.imageUrl?.isNotEmpty() == true) {
+            updatePhotoSelectionUI()
+        }
+    }
+
+    private fun setupUIForNewReport() {
+        val animalTypes = resources.getStringArray(R.array.filter_animals_array).drop(1).toTypedArray()
+        binding.dialogTitle.text = getString(R.string.publish_report)
+        binding.publishButton.text = getString(R.string.publish_report)
+        binding.toggleGroupListingType.check(R.id.lostButton)
+        updateToggleColors(R.id.lostButton)
+
+        binding.dropdownAnimalType.setText(animalTypes[0], false)
+
+        val format = SimpleDateFormat(getString(R.string.date_format_with_at), Locale.getDefault())
+        binding.dateTime.setText(format.format(Date()))
+    }
+
+    override fun onStart() {
+        super.onStart()
+        dialog?.window?.apply {
+            setBackgroundDrawableResource(android.R.color.transparent)
+            val width = (resources.displayMetrics.widthPixels * 0.95).toInt()
+            val height = (resources.displayMetrics.heightPixels * 0.90).toInt()
+            setLayout(width, height)
+        }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+
+    private fun getCompressedImageBytes(uri: android.net.Uri): ByteArray? {
+        return try {
+            requireContext().contentResolver.openInputStream(uri)?.use { inputStream ->
+                val originalBitmap = android.graphics.BitmapFactory.decodeStream(inputStream)
+
+                java.io.ByteArrayOutputStream().use { outputStream ->
+                    originalBitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 70, outputStream)
+                    outputStream.toByteArray()
+                }
             }
+        } catch (e: Exception) {
+            null
         }
     }
 }

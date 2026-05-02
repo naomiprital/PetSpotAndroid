@@ -1,36 +1,20 @@
 package com.example.petspotandroid.dao
 
-import android.content.Context
-import androidx.room.Database
 import androidx.room.Room
-import androidx.room.RoomDatabase
-import androidx.room.TypeConverters
-import com.example.petspotandroid.model.Post
-import com.example.petspotandroid.model.User
+import com.example.petspotandroid.base.MyApplication
 
-@Database(entities = [Post::class, User::class], version = 7, exportSchema = false)
-@TypeConverters(Converters::class)
-abstract class AppLocalDb : RoomDatabase() {
+object AppLocalDB {
+    val db: AppLocalDbRepository by lazy {
 
-    abstract fun postDao(): PostDao
-    abstract fun userDao(): UserDao
+        val context = MyApplication.appContext
+            ?: throw IllegalStateException("Context is null")
 
-    companion object {
-        @Volatile
-        private var INSTANCE: AppLocalDb? = null
-
-        fun getDatabase(context: Context): AppLocalDb {
-            return INSTANCE ?: synchronized(this) {
-                val instance = Room.databaseBuilder(
-                    context.applicationContext,
-                    AppLocalDb::class.java,
-                    "pet_spot_database"
-                )
-                    .fallbackToDestructiveMigration()
-                    .build()
-                INSTANCE = instance
-                instance
-            }
-        }
+        Room.databaseBuilder(
+            context = context,
+            klass = AppLocalDbRepository::class.java,
+            name = "petspot.db"
+        )
+            .fallbackToDestructiveMigration(true)
+            .build()
     }
 }

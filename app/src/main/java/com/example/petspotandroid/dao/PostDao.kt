@@ -10,21 +10,21 @@ import com.example.petspotandroid.model.Post
 
 @Dao
 interface PostDao {
-    @Query("SELECT * FROM posts ORDER BY createdAt DESC")
+    @Query("SELECT * FROM posts WHERE isResolved = 0 ORDER BY createdAt DESC")
     fun getAllPosts(): LiveData<List<Post>>
 
     @Query("SELECT * FROM posts WHERE authorId = :userId ORDER BY createdAt DESC")
     fun getPostsByUser(userId: String): LiveData<List<Post>>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(post: Post): Long
+    @Query("SELECT * FROM posts WHERE id = :postId")
+    fun getPostById(postId: String): LiveData<Post>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertPosts(posts: List<Post>)
+    fun insertPost(posts: Post)
 
     @Delete
-    suspend fun delete(post: Post): Int
+    fun delete(post: Post)
 
     @Query("DELETE FROM posts")
-    suspend fun deleteAll()
+    fun deleteAll()
 }

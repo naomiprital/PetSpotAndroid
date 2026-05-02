@@ -66,7 +66,7 @@ class PostsAdapter(
             statusView.setBackgroundResource(R.drawable.bg_badge)
             statusView.background.mutate().setTint(ContextCompat.getColor(context, badgeColorId))
 
-            if (post.imageUrl.isNotEmpty()) {
+            if (!post.imageUrl.isNullOrEmpty()) {
                 Picasso.get()
                     .load(post.imageUrl)
                     .fit()
@@ -78,7 +78,7 @@ class PostsAdapter(
                 imageView.setImageResource(android.R.drawable.ic_menu_camera)
             }
 
-            if (post.authorProfileImageUrl.isNotEmpty()) {
+            if (!post.authorProfileImageUrl.isNullOrEmpty()) {
                 Picasso.get()
                     .load(post.authorProfileImageUrl)
                     .placeholder(R.drawable.ic_person)

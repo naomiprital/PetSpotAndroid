@@ -1,7 +1,6 @@
 package com.example.petspotandroid.data.models
 
 import android.graphics.Bitmap
-import android.net.Uri
 import com.example.petspotandroid.base.StringCompletion
 import com.example.petspotandroid.model.User
 import com.google.firebase.Firebase
@@ -10,17 +9,18 @@ import com.google.firebase.storage.storage
 import java.io.ByteArrayOutputStream
 
 class FirebaseStorageModel {
+
     private val storage = Firebase.storage
 
     private fun uploadImage(image: Bitmap, ref: StorageReference, completion: StringCompletion) {
         val baos = ByteArrayOutputStream()
         image.compress(Bitmap.CompressFormat.JPEG, 100, baos)
-
         val data = baos.toByteArray()
+
         val uploadTask = ref.putBytes(data)
         uploadTask.addOnFailureListener {
             completion(null)
-        }.addOnSuccessListener { _ ->
+        }.addOnSuccessListener {
             ref.downloadUrl.addOnSuccessListener { uri ->
                 completion(uri.toString())
             }.addOnFailureListener {
@@ -31,24 +31,21 @@ class FirebaseStorageModel {
 
     fun uploadUserImage(image: Bitmap, user: User, completion: StringCompletion) {
         val storageRef = storage.reference
-        val imagesUserRef = storageRef.child("images/${user.id}/userProfile.jpg")
+        val imagesUserRef = storageRef.child("profile_images/${user.id}.jpg")
 
         uploadImage(image, imagesUserRef, completion)
     }
 
-    fun uploadPostImage(imageUri: Uri, postId: String, completion: StringCompletion) {
-        val storageRef = storage.reference
-        val imagesPostRef = storageRef.child("post_images/${postId}.jpg")
+    fun uploadPostImage(imageBytes: ByteArray, postId: String, callback: (String?) -> Unit) {
+        val ref = storage.reference.child("posts/$postId.jpg")
 
-        val uploadTask = imagesPostRef.putFile(imageUri)
-
-        uploadTask.addOnFailureListener { exception ->
-            completion(null)
-        }.addOnSuccessListener {
-            imagesPostRef.downloadUrl.addOnSuccessListener { uri ->
-                completion(uri.toString())
-            }.addOnFailureListener { exception ->
-                completion(null)
+        ref.putBytes(imageBytes).addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                ref.downloadUrl.addOnSuccessListener { uri ->
+                    callback(uri.toString())
+                }
+            } else {
+                callback(null)
             }
         }
     }
