@@ -1,5 +1,6 @@
 package com.example.petspotandroid.features.authentication.forgot_password
 
+import android.content.Context
 import android.os.Bundle
 import android.view.View
 import android.widget.TextView
@@ -14,12 +15,16 @@ import com.google.android.material.textfield.TextInputEditText
 
 class ForgotPasswordFragment : Fragment(R.layout.fragment_forgot_password) {
 
-    private lateinit var viewModel: AuthViewModel
+    private var viewModel: AuthViewModel? = null
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+
+        viewModel = ViewModelProvider(requireActivity())[AuthViewModel::class.java]
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        viewModel = ViewModelProvider(requireActivity())[AuthViewModel::class.java]
 
         val etResetEmail = view.findViewById<TextInputEditText>(R.id.etResetEmail)
         val btnSendResetLink = view.findViewById<MaterialButton>(R.id.btnSendResetLink)
@@ -29,7 +34,7 @@ class ForgotPasswordFragment : Fragment(R.layout.fragment_forgot_password) {
         btnSendResetLink.setOnClickListener {
             val email = etResetEmail.text.toString().trim()
             if (email.isNotEmpty()) {
-                viewModel.resetPassword(email)
+                viewModel?.resetPassword(email)
             } else {
                 ToastHelper.showCustomToast(view, "Please enter your email address.")
             }
@@ -38,7 +43,7 @@ class ForgotPasswordFragment : Fragment(R.layout.fragment_forgot_password) {
         tvResend.setOnClickListener {
             val email = etResetEmail.text.toString().trim()
             if (email.isNotEmpty()) {
-                viewModel.resetPassword(email)
+                viewModel?.resetPassword(email)
                 ToastHelper.showCustomToast(view, "Attempting to resend...")
             } else {
                 ToastHelper.showCustomToast(view, "Please enter your email address first.")
@@ -49,14 +54,14 @@ class ForgotPasswordFragment : Fragment(R.layout.fragment_forgot_password) {
             findNavController().navigateUp()
         }
 
-        viewModel.resetPasswordSuccess.observe(viewLifecycleOwner) { success ->
+        viewModel?.resetPasswordSuccess?.observe(viewLifecycleOwner) { success ->
             if (success) {
                 ToastHelper.showCustomToast(requireView(), "Reset link sent! Check your inbox.")
-                viewModel.clearResetPasswordStatus()
+                viewModel?.clearResetPasswordStatus()
             }
         }
 
-        viewModel.errorMessage.observe(viewLifecycleOwner) { message ->
+        viewModel?.errorMessage?.observe(viewLifecycleOwner) { message ->
             if (!message.isNullOrEmpty()) {
                 ToastHelper.showCustomToast(requireView(), message)
             }

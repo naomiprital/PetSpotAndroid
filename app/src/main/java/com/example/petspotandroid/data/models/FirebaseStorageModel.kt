@@ -29,11 +29,28 @@ class FirebaseStorageModel {
         }
     }
 
-    fun uploadUserImage(image: Bitmap, user: User, completion: StringCompletion) {
+    fun uploadUserImageFromBitmap(image: Bitmap, user: User, completion: StringCompletion) {
         val storageRef = storage.reference
         val imagesUserRef = storageRef.child("images/${user.id}/userProfile.jpg")
 
         uploadImage(image, imagesUserRef, completion)
+    }
+
+    fun uploadUserImageFromUri(imageUri: Uri, userId: String, completion: StringCompletion) {
+        val storageRef = storage.reference
+        val imagesUserRef = storageRef.child("images/${userId}/userProfile.jpg")
+
+        val uploadTask = imagesUserRef.putFile(imageUri)
+
+        uploadTask.addOnFailureListener {
+            completion(null)
+        }.addOnSuccessListener {
+            imagesUserRef.downloadUrl.addOnSuccessListener { uri: Uri ->
+                completion(uri.toString())
+            }.addOnFailureListener {
+                completion(null)
+            }
+        }
     }
 
     fun uploadPostImage(imageUri: Uri, postId: String, completion: StringCompletion) {
@@ -42,12 +59,12 @@ class FirebaseStorageModel {
 
         val uploadTask = imagesPostRef.putFile(imageUri)
 
-        uploadTask.addOnFailureListener { exception ->
+        uploadTask.addOnFailureListener { _ ->
             completion(null)
         }.addOnSuccessListener {
             imagesPostRef.downloadUrl.addOnSuccessListener { uri ->
                 completion(uri.toString())
-            }.addOnFailureListener { exception ->
+            }.addOnFailureListener { _ ->
                 completion(null)
             }
         }

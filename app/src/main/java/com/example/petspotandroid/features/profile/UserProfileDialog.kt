@@ -15,9 +15,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.squareup.picasso.Picasso
 
 class UserProfileDialog : DialogFragment() {
-
     private var targetUser: User? = null
-
     fun setUser(user: User) {
         this.targetUser = user
     }

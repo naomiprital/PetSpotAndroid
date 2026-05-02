@@ -14,23 +14,15 @@ import androidx.lifecycle.Observer
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import com.example.petspotandroid.R
-import com.example.petspotandroid.dao.AppLocalDb
 import com.example.petspotandroid.model.User
-import com.example.petspotandroid.data.repository.auth.AuthRepository
 import com.example.petspotandroid.features.authentication.auth.AuthViewModel
-import com.example.petspotandroid.features.authentication.auth.AuthViewModelFactory
 import com.google.android.material.card.MaterialCardView
 import com.squareup.picasso.Picasso
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var navController: NavController
-
-    private val authViewModel: AuthViewModel by viewModels {
-        val userDao = AppLocalDb.getDatabase(this).userDao()
-        val repository = AuthRepository(userDao)
-        AuthViewModelFactory(repository)
-    }
+    private val authViewModel: AuthViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -137,27 +129,19 @@ class MainActivity : AppCompatActivity() {
             
             authViewModel.refreshUserData()
 
-            val userObserver = Observer<com.google.firebase.auth.FirebaseUser?> { user ->
-                updateUI(user, authViewModel.userData.value)
-            }
             val userDataObserver = Observer<User?> { data ->
                 updateUI(authViewModel.user.value, data)
             }
 
-            authViewModel.user.observeForever(userObserver)
             authViewModel.userData.observeForever(userDataObserver)
 
             popupWindow.setOnDismissListener {
-                authViewModel.user.removeObserver(userObserver)
                 authViewModel.userData.removeObserver(userDataObserver)
             }
 
             btnLogout.setOnClickListener {
                 popupWindow.dismiss()
                 authViewModel.logout()
-                if (navController.currentDestination?.id != R.id.authFragment) {
-                    navController.navigate(R.id.action_global_authFragment)
-                }
             }
 
             btnHome.setOnClickListener {

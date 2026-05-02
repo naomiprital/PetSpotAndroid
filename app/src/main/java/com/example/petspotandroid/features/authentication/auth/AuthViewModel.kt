@@ -1,67 +1,41 @@
 package com.example.petspotandroid.features.authentication.auth
 
-import android.graphics.Bitmap
+import android.net.Uri
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.example.petspotandroid.data.repository.auth.AuthRepository
+import androidx.lifecycle.switchMap
+import com.example.petspotandroid.data.models.FirebaseAuthModel
 import com.example.petspotandroid.model.User
 import com.google.firebase.auth.FirebaseUser
-import kotlinx.coroutines.launch
 
-class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
+class AuthViewModel : ViewModel() {
+    private val firebaseAuthModel = FirebaseAuthModel.instance
     private val _isLoading = MutableLiveData<Boolean>()
-    val isLoading: LiveData<Boolean> = _isLoading
-
-    private val _user = MutableLiveData<FirebaseUser?>()
-    val user: LiveData<FirebaseUser?> = _user
-
-    private val _userData = MutableLiveData<User?>()
-    val userData: LiveData<User?> = _userData
-
     private val _errorMessage = MutableLiveData<String?>()
     val errorMessage: LiveData<String?> = _errorMessage
-
     private val _resetPasswordSuccess = MutableLiveData<Boolean>()
     val resetPasswordSuccess: LiveData<Boolean> = _resetPasswordSuccess
-
     private val _updateProfileSuccess = MutableLiveData<Boolean>()
     val updateProfileSuccess: LiveData<Boolean> = _updateProfileSuccess
 
-    init {
-        checkCurrentUser()
-    }
+    val user: LiveData<FirebaseUser?> = firebaseAuthModel.user
 
-    fun checkCurrentUser() {
-        val currentUser = repository.getCurrentUser()
-        if (_user.value?.uid != currentUser?.uid) {
-            _user.value = currentUser
-        }
-
-        if (currentUser != null) {
-            loadUserData(currentUser.uid)
+    val userData: LiveData<User?> = user.switchMap { firebaseUser ->
+        if (firebaseUser != null) {
+            firebaseAuthModel.getUserById(firebaseUser.uid)
         } else {
-            _userData.value = null
+            MutableLiveData(null)
         }
     }
 
-    fun refreshUserData() {
-        val currentUser = repository.getCurrentUser()
-        if (currentUser != null) {
-            loadUserData(currentUser.uid)
-        }
+    fun getUserData(userId: String): LiveData<User?> {
+        return firebaseAuthModel.getUserById(userId)
     }
 
-    private fun loadUserData(userId: String) {
-        viewModelScope.launch {
-            val result = repository.getUserData(userId)
-            result.onSuccess { user ->
-                if (_userData.value != user) {
-                    _userData.value = user
-                }
-            }
-        }
+    fun refreshUserData(userId: String? = firebaseAuthModel.getCurrentUser()?.uid) {
+        if (userId == null) return
+        firebaseAuthModel.refreshUserData(userId)
     }
 
     fun login(email: String, password: String) {
@@ -71,71 +45,54 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
         }
 
         _isLoading.value = true
-
-        viewModelScope.launch {
-            val result = repository.login(email, password)
+        firebaseAuthModel.login(email, password) { result ->
             _isLoading.value = false
-
-            result.onSuccess { firebaseUser ->
-                _user.value = firebaseUser
-                loadUserData(firebaseUser.uid)
-            }.onFailure { exception ->
-                _errorMessage.value = exception.message ?: "Login failed"
+            if (result.isFailure) {
+                _errorMessage.value = result.exceptionOrNull()?.message ?: "Login failed"
             }
         }
     }
 
-    fun register(
-        email: String,
-        password: String,
-        firstName: String,
-        lastName: String,
-        phone: String,
-        image: Bitmap? = null
-    ) {
+    fun register(email: String, password: String, firstName: String, lastName: String, phone: String, imageUri: Uri?) {
         if (email.isBlank() || password.isBlank() || firstName.isBlank() || lastName.isBlank() || phone.isBlank()) {
             _errorMessage.value = "Please fill in all fields"
             return
         }
 
         _isLoading.value = true
-        viewModelScope.launch {
-            val userProfile = User(
-                firstName = firstName,
-                lastName = lastName,
-                email = email,
-                phone = phone
-            )
-            val result = repository.register(userProfile, password, image)
-            _isLoading.value = false
+        val userProfile = User(firstName = firstName, lastName = lastName, email = email, phone = phone)
 
-            result.onSuccess { firebaseUser ->
-                _user.value = firebaseUser
-                loadUserData(firebaseUser.uid)
-            }.onFailure { exception ->
-                _errorMessage.value = exception.message ?: "Registration failed"
+        firebaseAuthModel.registerWithUri(userProfile, password, imageUri) { result ->
+            _isLoading.value = false
+            if (result.isFailure) {
+                _errorMessage.value = result.exceptionOrNull()?.message ?: "Registration failed"
             }
         }
     }
 
-    fun updateProfile(firstName: String, lastName: String, phone: String, image: Bitmap?) {
+    fun updateProfile(firstName: String, lastName: String, phone: String, imageUri: Uri?) {
         if (firstName.isBlank() || lastName.isBlank() || phone.isBlank()) {
             _errorMessage.value = "Please fill in all fields"
             return
         }
 
         _isLoading.value = true
-        viewModelScope.launch {
-            val result = repository.updateUserProfile(firstName, lastName, phone, image)
+        firebaseAuthModel.updateUserProfileWithUri(firstName, lastName, phone, imageUri) { result ->
             _isLoading.value = false
-
-            result.onSuccess { updatedUser ->
-                _userData.value = updatedUser
+            if (result.isSuccess) {
                 _updateProfileSuccess.value = true
-            }.onFailure { exception ->
-                _errorMessage.value = exception.message ?: "Update failed"
+            } else {
+                _errorMessage.value = result.exceptionOrNull()?.message ?: "Update failed"
             }
         }
+    }
+
+    fun logout() {
+        firebaseAuthModel.logout()
+    }
+
+    fun clearResetPasswordStatus() {
+        _resetPasswordSuccess.value = false
     }
 
     fun clearUpdateProfileStatus() {
@@ -143,43 +100,33 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
         _errorMessage.value = null
     }
 
-    fun logout() {
-        repository.logout()
-        _user.value = null
-        _userData.value = null
-        _resetPasswordSuccess.value = false
-    }
-
-    fun clearResetPasswordStatus() {
-        _resetPasswordSuccess.value = false
-    }
-
     fun resetPassword(email: String) {
+        if (email.isBlank()) {
+            _errorMessage.value = "Please enter your email address"
+            return
+        }
+
         _isLoading.value = true
         _errorMessage.value = null
 
-        viewModelScope.launch {
-            val checkResult = repository.checkEmailExists(email)
-
-            if (checkResult.isSuccess) {
-                val emailExists = checkResult.getOrNull() == true
-
-                if (emailExists) {
-                    val resetResult = repository.resetPassword(email)
-
-                    if (resetResult.isSuccess) {
-                        _resetPasswordSuccess.postValue(true)
+        firebaseAuthModel.checkEmailExists(email) { checkResult ->
+            if (checkResult.isSuccess && checkResult.getOrDefault(false)) {
+                firebaseAuthModel.resetPassword(email) { resetTask ->
+                    _isLoading.value = false
+                    if (resetTask.isSuccess) {
+                        _resetPasswordSuccess.value = true
                     } else {
-                        _errorMessage.postValue("Failed to send reset link: ${resetResult.exceptionOrNull()?.message}")
+                        _errorMessage.value = resetTask.exceptionOrNull()?.message ?: "Failed to send reset link"
                     }
-                } else {
-                    _errorMessage.postValue("No account found with this email address.")
                 }
             } else {
-                _errorMessage.postValue("Error checking account: ${checkResult.exceptionOrNull()?.message}")
+                _isLoading.value = false
+                _errorMessage.value = if (checkResult.isFailure) {
+                    checkResult.exceptionOrNull()?.message ?: "Error checking account"
+                } else {
+                    "No account found with this email address."
+                }
             }
-
-            _isLoading.value = false
         }
     }
 }

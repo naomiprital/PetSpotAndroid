@@ -10,17 +10,17 @@
         <package android:name="com.android.vending" />
         <package android:name="com.google.android.gsf" />
         <intent>
-            <action android:name="com.google.android.gms.auth.api.signin.SERVICE" />
+            <action android:name="android.intent.action.MAIN" />
         </intent>
         <intent>
-            <action android:name="com.google.android.gms.common.service.START" />
-        </intent>
-        <intent>
-            <action android:name="com.google.firebase.auth.api.gms.service.START" />
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="https" />
         </intent>
     </queries>
 
     <application
+        android:name=".base.PetSpotApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
