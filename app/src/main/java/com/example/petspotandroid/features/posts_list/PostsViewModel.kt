@@ -1,4 +1,4 @@
-package com.example.petspotandroid.viewmodel
+package com.example.petspotandroid.features.posts_list
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
@@ -9,16 +9,16 @@ import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
 import com.example.petspotandroid.R
 import com.example.petspotandroid.dao.AppLocalDb
-import com.example.petspotandroid.data.models.Post
-import com.example.petspotandroid.data.repository.FactRepository
-import com.example.petspotandroid.data.repository.PostRepository
+import com.example.petspotandroid.model.Post
+import com.example.petspotandroid.data.repository.fact.FactRepository
+import com.example.petspotandroid.data.repository.post.PostRepository
 import kotlinx.coroutines.launch
 
 enum class FilterType { ALL, LOST, FOUND }
 enum class SortOrder { NEWEST_FIRST, OLDEST_FIRST }
 
 class PostsViewModel(application: Application) : AndroidViewModel(application) {
-
+//    TODO: Break down to smaller view models !!
     private val postDao = AppLocalDb.getDatabase(application).postDao()
     private val repository = PostRepository(postDao)
 

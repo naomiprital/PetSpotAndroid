@@ -1,4 +1,4 @@
-package com.example.petspotandroid.features.authentication
+package com.example.petspotandroid.features.authentication.forgot_password
 
 import android.os.Bundle
 import android.view.View
@@ -8,7 +8,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import com.example.petspotandroid.R
 import com.example.petspotandroid.base.ToastHelper
-import com.example.petspotandroid.viewmodel.AuthViewModel
+import com.example.petspotandroid.features.authentication.auth.AuthViewModel
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 

@@ -1,17 +1,17 @@
-package com.example.petspotandroid.features.authentication
+package com.example.petspotandroid.features.authentication.login
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.View
 import android.widget.TextView
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import com.example.petspotandroid.R
 import com.example.petspotandroid.base.ToastHelper
 import com.example.petspotandroid.dao.AppLocalDb
-import com.example.petspotandroid.data.repository.AuthRepository
-import com.example.petspotandroid.viewmodel.AuthViewModel
+import com.example.petspotandroid.data.repository.auth.AuthRepository
+import com.example.petspotandroid.features.authentication.auth.AuthViewModel
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 
@@ -22,7 +22,7 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
         super.onViewCreated(view, savedInstanceState)
 
         val repository = AuthRepository(
-            AppLocalDb.getDatabase(requireContext()).userDao()
+            AppLocalDb.Companion.getDatabase(requireContext()).userDao()
         )
 
         val factory = object : ViewModelProvider.Factory {

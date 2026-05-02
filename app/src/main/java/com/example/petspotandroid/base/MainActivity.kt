@@ -15,10 +15,10 @@ import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import com.example.petspotandroid.R
 import com.example.petspotandroid.dao.AppLocalDb
-import com.example.petspotandroid.data.models.User
-import com.example.petspotandroid.data.repository.AuthRepository
-import com.example.petspotandroid.viewmodel.AuthViewModel
-import com.example.petspotandroid.viewmodel.AuthViewModelFactory
+import com.example.petspotandroid.model.User
+import com.example.petspotandroid.data.repository.auth.AuthRepository
+import com.example.petspotandroid.features.authentication.auth.AuthViewModel
+import com.example.petspotandroid.features.authentication.auth.AuthViewModelFactory
 import com.google.android.material.card.MaterialCardView
 import com.squareup.picasso.Picasso
 

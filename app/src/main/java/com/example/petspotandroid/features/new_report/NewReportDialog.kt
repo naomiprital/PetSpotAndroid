@@ -1,4 +1,4 @@
-package com.example.petspotandroid.ui
+package com.example.petspotandroid.features.new_report
 
 import android.annotation.SuppressLint
 import android.app.AlertDialog
@@ -23,10 +23,10 @@ import androidx.core.content.FileProvider
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.ViewModelProvider
 import com.example.petspotandroid.R
-import com.example.petspotandroid.data.firebase.FirebaseStorageModel
-import com.example.petspotandroid.data.models.Post
-import com.example.petspotandroid.viewmodel.PostsViewModel
-import com.example.petspotandroid.viewmodel.AuthViewModel
+import com.example.petspotandroid.data.models.FirebaseStorageModel
+import com.example.petspotandroid.model.Post
+import com.example.petspotandroid.features.authentication.auth.AuthViewModel
+import com.example.petspotandroid.features.posts_list.PostsViewModel
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.datepicker.MaterialDatePicker
@@ -249,7 +249,8 @@ class NewReportDialog : DialogFragment() {
             }
 
             publishButton.isEnabled = false
-            publishButton.text = if (editingPost != null) getString(R.string.saving) else getString(R.string.publishing)
+            publishButton.text = if (editingPost != null) getString(R.string.saving) else getString(
+                R.string.publishing)
 
             val postId = editingPost?.id ?: UUID.randomUUID().toString()
             val createdAt = editingPost?.createdAt ?: System.currentTimeMillis()
@@ -303,7 +304,8 @@ class NewReportDialog : DialogFragment() {
                         savePostAction(uploadedUrl)
                     } else {
                         publishButton.isEnabled = true
-                        publishButton.text = if (editingPost != null) getString(R.string.save_changes) else getString(R.string.publish_report)
+                        publishButton.text = if (editingPost != null) getString(R.string.save_changes) else getString(
+                            R.string.publish_report)
                         Toast.makeText(
                             requireContext(),
                             "Failed to upload image. Please try again.",

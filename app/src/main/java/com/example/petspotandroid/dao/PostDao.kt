@@ -6,7 +6,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.example.petspotandroid.data.models.Post
+import com.example.petspotandroid.model.Post
 
 @Dao
 interface PostDao {

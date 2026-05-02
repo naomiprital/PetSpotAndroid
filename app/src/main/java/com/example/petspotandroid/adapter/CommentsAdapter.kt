@@ -8,7 +8,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.petspotandroid.R
-import com.example.petspotandroid.data.models.Comment
+import com.example.petspotandroid.model.Comment
 import com.squareup.picasso.Picasso
 import java.text.SimpleDateFormat
 import java.util.Date

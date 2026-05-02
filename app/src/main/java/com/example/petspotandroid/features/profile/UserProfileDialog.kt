@@ -10,7 +10,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.fragment.app.DialogFragment
 import com.example.petspotandroid.R
-import com.example.petspotandroid.data.models.User
+import com.example.petspotandroid.model.User
 import com.google.firebase.firestore.FirebaseFirestore
 import com.squareup.picasso.Picasso
 
