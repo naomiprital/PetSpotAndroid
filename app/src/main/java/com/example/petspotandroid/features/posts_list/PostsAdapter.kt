@@ -1,4 +1,4 @@
-package com.example.petspotandroid.adapter
+package com.example.petspotandroid.features.posts_list
 
 import android.annotation.SuppressLint
 import android.view.LayoutInflater
@@ -9,7 +9,7 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.example.petspotandroid.R
-import com.example.petspotandroid.data.models.Post
+import com.example.petspotandroid.model.Post
 import com.squareup.picasso.Picasso
 
 class PostsAdapter(

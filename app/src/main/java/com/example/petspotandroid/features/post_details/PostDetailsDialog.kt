@@ -1,4 +1,4 @@
-package com.example.petspotandroid.features.posts
+package com.example.petspotandroid.features.post_details
 
 import android.annotation.SuppressLint
 import android.content.Intent
@@ -12,24 +12,25 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.fragment.app.DialogFragment
+import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.petspotandroid.R
-import com.example.petspotandroid.data.models.Post
+import com.example.petspotandroid.features.comments.CommentsAdapter
+import com.example.petspotandroid.model.Comment
+import com.example.petspotandroid.model.Post
+import com.example.petspotandroid.model.User
+import com.example.petspotandroid.features.profile.UserProfileDialog
+import com.example.petspotandroid.features.authentication.auth.AuthViewModel
+import com.example.petspotandroid.features.posts_list.PostsViewModel
 import com.google.android.material.button.MaterialButton
+import com.google.firebase.firestore.FirebaseFirestore
 import com.squareup.picasso.Picasso
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import androidx.core.net.toUri
-import androidx.lifecycle.ViewModelProvider
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.example.petspotandroid.adapter.CommentsAdapter
-import com.example.petspotandroid.data.models.Comment
-import com.example.petspotandroid.features.profile.UserProfileDialog
-import com.example.petspotandroid.viewmodel.AuthViewModel
-import com.example.petspotandroid.viewmodel.PostsViewModel
-import com.google.firebase.firestore.FirebaseFirestore
 import java.util.UUID
 
 class PostDetailsDialog(private val post: Post) : DialogFragment() {
@@ -176,7 +177,7 @@ class PostDetailsDialog(private val post: Post) : DialogFragment() {
             .document(userId)
             .get()
             .addOnSuccessListener { document ->
-                val user = document.toObject(com.example.petspotandroid.data.models.User::class.java)
+                val user = document.toObject(User::class.java)
                 if (user != null) {
                     UserProfileDialog().apply {
                         setUser(user)

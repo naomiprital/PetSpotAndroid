@@ -1,6 +1,7 @@
-package com.example.petspotandroid.features.authentication
+package com.example.petspotandroid.features.authentication.signup
 
 import android.annotation.SuppressLint
+import android.app.AlertDialog
 import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.os.Bundle
@@ -16,9 +17,9 @@ import androidx.navigation.fragment.findNavController
 import com.example.petspotandroid.R
 import com.example.petspotandroid.base.ToastHelper
 import com.example.petspotandroid.dao.AppLocalDb
-import com.example.petspotandroid.data.repository.AuthRepository
+import com.example.petspotandroid.data.repository.auth.AuthRepository
 import com.example.petspotandroid.databinding.FragmentSignUpBinding
-import com.example.petspotandroid.viewmodel.AuthViewModel
+import com.example.petspotandroid.features.authentication.auth.AuthViewModel
 
 class SignUpFragment : Fragment() {
     private lateinit var viewModel: AuthViewModel
@@ -56,7 +57,7 @@ class SignUpFragment : Fragment() {
 
         binding.btnUploadImage.setOnClickListener {
             val options = arrayOf("Take Photo", "Choose from Gallery", "Cancel")
-            val builder = android.app.AlertDialog.Builder(requireContext())
+            val builder = AlertDialog.Builder(requireContext())
             builder.setTitle("Choose your profile picture")
 
             builder.setItems(options) { dialog, which ->
@@ -84,7 +85,7 @@ class SignUpFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         val repository = AuthRepository(
-            AppLocalDb.getDatabase(requireContext()).userDao(),
+            AppLocalDb.Companion.getDatabase(requireContext()).userDao(),
         )
 
         val factory = object : ViewModelProvider.Factory {

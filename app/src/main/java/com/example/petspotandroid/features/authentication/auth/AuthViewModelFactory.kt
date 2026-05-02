@@ -1,8 +1,8 @@
-package com.example.petspotandroid.viewmodel
+package com.example.petspotandroid.features.authentication.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.example.petspotandroid.data.repository.AuthRepository
+import com.example.petspotandroid.data.repository.auth.AuthRepository
 
 class AuthViewModelFactory(private val repository: AuthRepository) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {

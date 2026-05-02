@@ -1,4 +1,4 @@
-package com.example.petspotandroid.features.posts
+package com.example.petspotandroid.features.profile
 
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
@@ -10,31 +10,32 @@ import android.widget.TextView
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.petspotandroid.R
-import com.example.petspotandroid.adapter.UserPostsAdapter
+import com.example.petspotandroid.features.profile.UserPostsAdapter
 import com.example.petspotandroid.base.ToastHelper
 import com.example.petspotandroid.dao.AppLocalDb
-import com.example.petspotandroid.data.repository.AuthRepository
-import com.example.petspotandroid.ui.NewReportDialog
-import com.example.petspotandroid.viewmodel.AuthViewModel
-import com.example.petspotandroid.viewmodel.AuthViewModelFactory
-import com.example.petspotandroid.viewmodel.PostsViewModel
+import com.example.petspotandroid.data.repository.auth.AuthRepository
+import com.example.petspotandroid.features.post_details.PostDetailsDialog
+import com.example.petspotandroid.features.new_report.NewReportDialog
+import com.example.petspotandroid.features.authentication.auth.AuthViewModel
+import com.example.petspotandroid.features.authentication.auth.AuthViewModelFactory
+import com.example.petspotandroid.features.posts_list.PostsViewModel
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.squareup.picasso.Picasso
 import java.util.Calendar
-import androidx.core.view.isVisible
 
 class ProfileFragment : Fragment(R.layout.fragment_profile) {
 
     private val authViewModel: AuthViewModel by activityViewModels {
-        val userDao = AppLocalDb.getDatabase(requireContext()).userDao()
+        val userDao = AppLocalDb.Companion.getDatabase(requireContext()).userDao()
         val repository = AuthRepository(userDao)
         AuthViewModelFactory(repository)
     }
@@ -42,7 +43,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
     private val postsViewModel: PostsViewModel by viewModels()
 
     private lateinit var adapter: UserPostsAdapter
-    
+
     private var cameraLauncher: ActivityResultLauncher<Void?>? = null
     private var galleryLauncher: ActivityResultLauncher<String>? = null
     private var isImageUpdated = false
@@ -61,16 +62,16 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         val tvReunionsCount = view.findViewById<TextView>(R.id.tvReunionsCount)
         val tvListingsCount = view.findViewById<TextView>(R.id.tvListingsCount)
         val rvUserPosts = view.findViewById<RecyclerView>(R.id.rvUserPosts)
-        
+
         val btnEditProfile = view.findViewById<MaterialButton>(R.id.btnEditProfile)
         val btnCancelEdit = view.findViewById<MaterialButton>(R.id.btnCancelEdit)
         val btnSaveProfile = view.findViewById<MaterialButton>(R.id.btnSaveProfile)
 
         val tvPhone = view.findViewById<TextView>(R.id.tvPhone)
-        
+
         val llEditName = view.findViewById<View>(R.id.llEditName)
         val tilPhone = view.findViewById<TextInputLayout>(R.id.tilPhone)
-        
+
         val etFirstName = view.findViewById<TextInputEditText>(R.id.etFirstName)
         val etLastName = view.findViewById<TextInputEditText>(R.id.etLastName)
         val etPhone = view.findViewById<TextInputEditText>(R.id.etPhone)
@@ -84,7 +85,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
                 }
             },
             onEditClick = { post ->
-                val dialog = NewReportDialog.newInstance(post)
+                val dialog = NewReportDialog.Companion.newInstance(post)
                 dialog.show(parentFragmentManager, "EditReportDialog")
             },
             onDeleteClick = { post ->
@@ -103,7 +104,8 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
                 val updatedPost = post.copy(isResolved = !post.isResolved)
                 postsViewModel.updatePost(updatedPost) { success, messageRes ->
                     if (success) {
-                        val statusRes = if (updatedPost.isResolved) R.string.listing_marked_as_resolved_success else R.string.listing_marked_as_unresolved_success
+                        val statusRes =
+                            if (updatedPost.isResolved) R.string.listing_marked_as_resolved_success else R.string.listing_marked_as_unresolved_success
                         ToastHelper.showCustomToast(requireView(), getString(statusRes))
                     } else {
                         ToastHelper.showCustomToast(requireView(), getString(messageRes))
@@ -155,7 +157,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
                     adapter.setPosts(posts)
                     tvReportsCount.text = posts.size.toString()
                     tvListingsCount.text = posts.size.toString()
-                    
+
                     val reunions = posts.count { post -> post.isResolved }
                     tvReunionsCount.text = reunions.toString()
                 }
@@ -163,11 +165,11 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         }
 
         btnEditProfile.setOnClickListener {
-            toggleEditMode(true, 
-                btnEditProfile, btnCancelEdit, btnSaveProfile, 
+            toggleEditMode(true,
+                btnEditProfile, btnCancelEdit, btnSaveProfile,
                 tvUserName, llEditName, tvPhone, tilPhone,
                 ivCameraOverlay, vImageDimOverlay)
-            
+
             val user = authViewModel.userData.value
             etFirstName.setText(user?.firstName)
             etLastName.setText(user?.lastName)
@@ -175,8 +177,8 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         }
 
         btnCancelEdit.setOnClickListener {
-            toggleEditMode(false, 
-                btnEditProfile, btnCancelEdit, btnSaveProfile, 
+            toggleEditMode(false,
+                btnEditProfile, btnCancelEdit, btnSaveProfile,
                 tvUserName, llEditName, tvPhone, tilPhone,
                 ivCameraOverlay, vImageDimOverlay)
             isImageUpdated = false
@@ -227,7 +229,8 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         }
 
         val showImageOptions = {
-            val options = arrayOf(getString(R.string.take_photo), getString(R.string.choose_from_gallery), getString(R.string.cancel))
+            val options = arrayOf(getString(R.string.take_photo), getString(R.string.choose_from_gallery), getString(
+                R.string.cancel))
             val builder = AlertDialog.Builder(requireContext())
             builder.setTitle(R.string.update_profile_picture_title)
             builder.setItems(options) { dialog, which ->
@@ -259,7 +262,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
 
         tvName.visibility = if (isEdit) View.GONE else View.VISIBLE
         editName.visibility = if (isEdit) View.GONE else View.VISIBLE
-        
+
         tvPh.visibility = if (isEdit) View.GONE else View.VISIBLE
         tilPh.visibility = if (isEdit) View.VISIBLE else View.GONE
 

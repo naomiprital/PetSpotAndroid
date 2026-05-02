@@ -1,8 +1,8 @@
-package com.example.petspotandroid.data.repository
+package com.example.petspotandroid.data.repository.post
 
 import androidx.lifecycle.LiveData
 import com.example.petspotandroid.dao.PostDao
-import com.example.petspotandroid.data.models.Post
+import com.example.petspotandroid.model.Post
 import com.google.firebase.firestore.DocumentChange
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.CoroutineScope

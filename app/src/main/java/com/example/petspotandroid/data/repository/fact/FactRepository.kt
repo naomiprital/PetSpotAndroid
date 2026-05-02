@@ -1,4 +1,4 @@
-package com.example.petspotandroid.data.repository
+package com.example.petspotandroid.data.repository.fact
 
 import com.example.petspotandroid.api.RetrofitInstance
 import com.google.firebase.firestore.FirebaseFirestore

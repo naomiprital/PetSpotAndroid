@@ -1,4 +1,4 @@
-package com.example.petspotandroid.adapter
+package com.example.petspotandroid.features.profile
 
 import android.annotation.SuppressLint
 import android.content.res.ColorStateList
@@ -10,7 +10,7 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.example.petspotandroid.R
-import com.example.petspotandroid.data.models.Post
+import com.example.petspotandroid.model.Post
 import com.google.android.material.button.MaterialButton
 import com.squareup.picasso.Picasso
 
@@ -62,7 +62,7 @@ class UserPostsAdapter(
             onResolveToggleClick: (Post) -> Unit
         ) {
             val context = itemView.context
-            
+
             descriptionView.text = post.description
             dateView.text = post.eventDate
             commentCountView.text = post.comments.size.toString()
@@ -70,14 +70,14 @@ class UserPostsAdapter(
             val statusTextId = if (post.isLost) R.string.lost else R.string.found
             val statusColor = ContextCompat.getColor(context, if (post.isLost) R.color.status_lost_text else R.color.status_found_text)
             val statusBgColor = ContextCompat.getColor(context, if (post.isLost) R.color.status_lost_bg else R.color.status_found_bg)
-            
+
             statusView.text = context.getString(statusTextId)
             statusView.setTextColor(statusColor)
             statusView.backgroundTintList = ColorStateList.valueOf(statusBgColor)
 
             if (post.isResolved) {
                 badgeResolved.visibility = View.VISIBLE
-                
+
                 val resolvedBg = ContextCompat.getColor(context, R.color.resolved_bg)
                 val resolvedText = ContextCompat.getColor(context, R.color.resolved_text)
                 val resolvedStroke = ContextCompat.getColor(context, R.color.resolved_stroke)
@@ -88,17 +88,17 @@ class UserPostsAdapter(
                 btnResolve.setTextColor(resolvedText)
                 btnResolve.iconTint = ColorStateList.valueOf(resolvedText)
                 btnResolve.setStrokeColor(ColorStateList.valueOf(resolvedStroke))
-                
+
                 btnEdit.isEnabled = false
                 btnDelete.isEnabled = false
                 llContentDimmed.alpha = 0.5f
                 imageView.alpha = 0.5f
-                
+
                 btnEdit.setOnClickListener(null)
                 btnDelete.setOnClickListener(null)
             } else {
                 badgeResolved.visibility = View.GONE
-                
+
                 val foundBg = ContextCompat.getColor(context, R.color.status_found_bg)
                 val unresolvedText = ContextCompat.getColor(context, R.color.unresolved_text)
                 val unresolvedStroke = ContextCompat.getColor(context, R.color.unresolved_stroke)
@@ -109,12 +109,12 @@ class UserPostsAdapter(
                 btnResolve.setTextColor(unresolvedText)
                 btnResolve.iconTint = ColorStateList.valueOf(unresolvedText)
                 btnResolve.setStrokeColor(ColorStateList.valueOf(unresolvedStroke))
-                
+
                 btnEdit.isEnabled = true
                 btnDelete.isEnabled = true
                 llContentDimmed.alpha = 1.0f
                 imageView.alpha = 1.0f
-                
+
                 btnEdit.setOnClickListener { onEditClick(post) }
                 btnDelete.setOnClickListener { onDeleteClick(post) }
             }

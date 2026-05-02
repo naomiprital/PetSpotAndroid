@@ -5,8 +5,8 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import com.example.petspotandroid.data.models.Post
-import com.example.petspotandroid.data.models.User
+import com.example.petspotandroid.model.Post
+import com.example.petspotandroid.model.User
 
 @Database(entities = [Post::class, User::class], version = 7, exportSchema = false)
 @TypeConverters(Converters::class)

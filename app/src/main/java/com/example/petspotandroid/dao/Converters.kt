@@ -1,7 +1,7 @@
 package com.example.petspotandroid.dao
 
 import androidx.room.TypeConverter
-import com.example.petspotandroid.data.models.Comment
+import com.example.petspotandroid.model.Comment
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 

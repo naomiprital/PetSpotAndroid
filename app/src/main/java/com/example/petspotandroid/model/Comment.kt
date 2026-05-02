@@ -1,4 +1,4 @@
-package com.example.petspotandroid.data.models
+package com.example.petspotandroid.model
 
 data class Comment(
     val id: String = "",

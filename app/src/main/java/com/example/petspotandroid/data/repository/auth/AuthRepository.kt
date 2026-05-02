@@ -1,9 +1,9 @@
-package com.example.petspotandroid.data.repository
+package com.example.petspotandroid.data.repository.auth
 
 import android.graphics.Bitmap
 import com.example.petspotandroid.dao.UserDao
-import com.example.petspotandroid.data.firebase.FirebaseStorageModel
-import com.example.petspotandroid.data.models.User
+import com.example.petspotandroid.data.models.FirebaseStorageModel
+import com.example.petspotandroid.model.User
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
@@ -88,11 +88,12 @@ class AuthRepository(private val userDao: UserDao) {
         }
     }
 
-    private suspend fun uploadImage(image: Bitmap, user: User): String? = suspendCancellableCoroutine { continuation ->
-        firebaseStorageModel.uploadUserImage(image, user) { url ->
-            continuation.resume(url)
+    private suspend fun uploadImage(image: Bitmap, user: User): String? =
+        suspendCancellableCoroutine { continuation ->
+            firebaseStorageModel.uploadUserImage(image, user) { url ->
+                continuation.resume(url)
+            }
         }
-    }
 
     suspend fun login(email: String, password: String): Result<FirebaseUser> {
         return try {

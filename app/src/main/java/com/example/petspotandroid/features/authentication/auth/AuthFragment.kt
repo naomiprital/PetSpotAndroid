@@ -1,4 +1,4 @@
-package com.example.petspotandroid.features.authentication
+package com.example.petspotandroid.features.authentication.auth
 
 import android.graphics.Color
 import android.os.Bundle
@@ -7,6 +7,8 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.example.petspotandroid.R
+import com.example.petspotandroid.features.authentication.login.LoginFragment
+import com.example.petspotandroid.features.authentication.signup.SignUpFragment
 import com.google.android.material.card.MaterialCardView
 
 class AuthFragment : Fragment(R.layout.fragment_auth) {

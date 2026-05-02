@@ -1,9 +1,9 @@
-package com.example.petspotandroid.data.firebase
+package com.example.petspotandroid.data.models
 
 import android.graphics.Bitmap
 import android.net.Uri
 import com.example.petspotandroid.base.StringCompletion
-import com.example.petspotandroid.data.models.User
+import com.example.petspotandroid.model.User
 import com.google.firebase.Firebase
 import com.google.firebase.storage.StorageReference
 import com.google.firebase.storage.storage

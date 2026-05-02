@@ -1,28 +1,28 @@
-package com.example.petspotandroid.viewmodel
+package com.example.petspotandroid.features.authentication.auth
 
 import android.graphics.Bitmap
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.petspotandroid.data.models.User
-import com.example.petspotandroid.data.repository.AuthRepository
+import com.example.petspotandroid.data.repository.auth.AuthRepository
+import com.example.petspotandroid.model.User
 import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.launch
 
 class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
-    
+
     private val _user = MutableLiveData<FirebaseUser?>()
     val user: LiveData<FirebaseUser?> = _user
-    
+
     private val _userData = MutableLiveData<User?>()
     val userData: LiveData<User?> = _userData
-    
+
     private val _errorMessage = MutableLiveData<String?>()
     val errorMessage: LiveData<String?> = _errorMessage
-    
+
     private val _resetPasswordSuccess = MutableLiveData<Boolean>()
     val resetPasswordSuccess: LiveData<Boolean> = _resetPasswordSuccess
 
@@ -128,7 +128,7 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
         viewModelScope.launch {
             val result = repository.updateUserProfile(firstName, lastName, phone, image)
             _isLoading.value = false
-            
+
             result.onSuccess { updatedUser ->
                 _userData.value = updatedUser
                 _updateProfileSuccess.value = true

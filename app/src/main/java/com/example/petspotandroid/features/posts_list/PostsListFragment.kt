@@ -1,4 +1,4 @@
-package com.example.petspotandroid.features.posts
+package com.example.petspotandroid.features.posts_list
 
 import android.graphics.Typeface
 import android.os.Bundle
@@ -20,11 +20,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.petspotandroid.R
-import com.example.petspotandroid.adapter.PostsAdapter
-import com.example.petspotandroid.ui.NewReportDialog
-import com.example.petspotandroid.viewmodel.FilterType
-import com.example.petspotandroid.viewmodel.PostsViewModel
-import com.example.petspotandroid.viewmodel.SortOrder
+import com.example.petspotandroid.features.posts_list.PostsAdapter
+import com.example.petspotandroid.features.post_details.PostDetailsDialog
+import com.example.petspotandroid.features.new_report.NewReportDialog
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 class PostsListFragment : Fragment() {
