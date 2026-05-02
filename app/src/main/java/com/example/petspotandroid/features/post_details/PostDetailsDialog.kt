@@ -30,7 +30,9 @@ class PostDetailsDialog : DialogFragment() {
     private val binding get() = _binding!!
 
     private val viewModel: PostDetailsViewModel by viewModels()
-    private lateinit var authViewModel: AuthViewModel
+    private val authViewModel: AuthViewModel by viewModels {
+        AuthViewModelFactory(AuthRepository(AppLocalDB.db.userDao))
+    }
 
     private var commentsAdapter: CommentsAdapter? = null
     private var currentPost: Post? = null
