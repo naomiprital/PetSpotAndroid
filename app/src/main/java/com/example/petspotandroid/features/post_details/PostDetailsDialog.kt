@@ -18,7 +18,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.petspotandroid.R
-import com.example.petspotandroid.adapter.CommentsAdapter
+import com.example.petspotandroid.features.comments.CommentsAdapter
 import com.example.petspotandroid.model.Comment
 import com.example.petspotandroid.model.Post
 import com.example.petspotandroid.model.User

@@ -20,7 +20,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.petspotandroid.R
-import com.example.petspotandroid.adapter.PostsAdapter
+import com.example.petspotandroid.features.posts_list.PostsAdapter
 import com.example.petspotandroid.features.post_details.PostDetailsDialog
 import com.example.petspotandroid.features.new_report.NewReportDialog
 import com.google.android.material.floatingactionbutton.FloatingActionButton

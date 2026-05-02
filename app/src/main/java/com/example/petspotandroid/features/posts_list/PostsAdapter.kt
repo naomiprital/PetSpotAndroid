@@ -1,4 +1,4 @@
-package com.example.petspotandroid.adapter
+package com.example.petspotandroid.features.posts_list
 
 import android.annotation.SuppressLint
 import android.view.LayoutInflater

@@ -17,7 +17,7 @@ import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.petspotandroid.R
-import com.example.petspotandroid.adapter.UserPostsAdapter
+import com.example.petspotandroid.features.profile.UserPostsAdapter
 import com.example.petspotandroid.base.ToastHelper
 import com.example.petspotandroid.dao.AppLocalDb
 import com.example.petspotandroid.data.repository.auth.AuthRepository
