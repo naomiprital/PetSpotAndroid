@@ -13,15 +13,11 @@ import android.widget.Toast
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.viewModels
 import com.example.petspotandroid.R
-import com.example.petspotandroid.dao.AppLocalDB
 import com.example.petspotandroid.databinding.FragmentNewReportBinding
 import com.example.petspotandroid.features.authentication.auth.AuthViewModel
-import com.example.petspotandroid.features.authentication.auth.AuthViewModelFactory
-import com.example.petspotandroid.data.repository.auth.AuthRepository
 import com.example.petspotandroid.model.Post
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.timepicker.MaterialTimePicker
@@ -39,12 +35,8 @@ class NewReportDialog : DialogFragment() {
     private var tempCameraUri: Uri? = null
     private var editingPost: Post? = null
 
+    private val authViewModel: AuthViewModel by viewModels()
     private val newReportViewModel: NewReportViewModel by viewModels()
-
-    private val authViewModel: AuthViewModel by viewModels {
-        val repository = AuthRepository(AppLocalDB.db.userDao)
-        AuthViewModelFactory(repository)
-    }
 
     companion object {
         private const val ARG_POST_ID = "arg_post_id"
@@ -177,14 +169,12 @@ class NewReportDialog : DialogFragment() {
 
     private fun handleSuccess(messageRes: Int) {
         if (!isAdded) return
-
         Toast.makeText(requireContext(), getString(messageRes), Toast.LENGTH_SHORT).show()
         dismiss()
     }
 
     private fun handleError() {
         if (!isAdded) return
-
         Toast.makeText(requireContext(), "Operation failed. Please try again.", Toast.LENGTH_SHORT).show()
     }
 
@@ -211,7 +201,7 @@ class NewReportDialog : DialogFragment() {
 
     private fun launchCamera() {
         val photoFile = File(requireContext().cacheDir, "camera_image_${System.currentTimeMillis()}.jpg")
-        tempCameraUri = FileProvider.getUriForFile(requireContext(), "${requireContext().packageName}.fileprovider", photoFile)
+        tempCameraUri = androidx.core.content.FileProvider.getUriForFile(requireContext(), "${requireContext().packageName}.fileprovider", photoFile)
         takePicture.launch(tempCameraUri)
     }
 
@@ -300,7 +290,6 @@ class NewReportDialog : DialogFragment() {
         return try {
             requireContext().contentResolver.openInputStream(uri)?.use { inputStream ->
                 val originalBitmap = android.graphics.BitmapFactory.decodeStream(inputStream)
-
                 java.io.ByteArrayOutputStream().use { outputStream ->
                     originalBitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 70, outputStream)
                     outputStream.toByteArray()

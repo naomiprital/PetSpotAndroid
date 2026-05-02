@@ -14,29 +14,25 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.example.petspotandroid.R
-import com.example.petspotandroid.dao.AppLocalDB
-import com.example.petspotandroid.data.repository.auth.AuthRepository
 import com.example.petspotandroid.databinding.FragmentSignUpBinding
 import com.example.petspotandroid.features.authentication.auth.AuthViewModel
-import com.example.petspotandroid.features.authentication.auth.AuthViewModelFactory
+import com.example.petspotandroid.model.User
 
 class SignUpFragment : Fragment() {
 
-    private var binding: FragmentSignUpBinding? = null
+    private var _binding: FragmentSignUpBinding? = null
+    private val binding get() = _binding!!
+
     private var isImageSelected = false
 
-    private val viewModel: AuthViewModel by viewModels {
-        val userDao = AppLocalDB.db.userDao
-        val repository = AuthRepository(userDao)
-        AuthViewModelFactory(repository)
-    }
+    private val viewModel: AuthViewModel by viewModels()
 
     @SuppressLint("SetTextI18n")
     private val cameraLauncher = registerForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
         bitmap?.let {
-            binding?.ivSelectedImage?.setImageBitmap(it)
-            binding?.tvUploadHint?.text = "Photo selected"
-            binding?.btnRemoveImage?.visibility = View.VISIBLE
+            binding.ivSelectedImage.setImageBitmap(it)
+            binding.tvUploadHint.text = "Photo selected"
+            binding.btnRemoveImage.visibility = View.VISIBLE
             isImageSelected = true
         }
     }
@@ -44,9 +40,9 @@ class SignUpFragment : Fragment() {
     @SuppressLint("SetTextI18n")
     private val galleryLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let {
-            binding?.ivSelectedImage?.setImageURI(it)
-            binding?.tvUploadHint?.text = "Photo selected"
-            binding?.btnRemoveImage?.visibility = View.VISIBLE
+            binding.ivSelectedImage.setImageURI(it)
+            binding.tvUploadHint.text = "Photo selected"
+            binding.btnRemoveImage.visibility = View.VISIBLE
             isImageSelected = true
         }
     }
@@ -54,9 +50,9 @@ class SignUpFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        binding = FragmentSignUpBinding.inflate(inflater, container, false)
-        return binding?.root
+    ): View {
+        _binding = FragmentSignUpBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -67,7 +63,7 @@ class SignUpFragment : Fragment() {
     }
 
     private fun setupListeners() {
-        binding?.btnUploadImage?.setOnClickListener {
+        binding.btnUploadImage.setOnClickListener {
             val options = arrayOf("Take Photo", "Choose from Gallery", "Cancel")
             AlertDialog.Builder(requireContext())
                 .setTitle("Choose your profile picture")
@@ -81,42 +77,46 @@ class SignUpFragment : Fragment() {
                 .show()
         }
 
-        binding?.btnRemoveImage?.setOnClickListener {
-            binding?.ivSelectedImage?.setImageResource(R.drawable.ic_cloud_upload)
-            binding?.tvUploadHint?.text = getString(R.string.tap_to_upload_your_photo)
-            binding?.btnRemoveImage?.visibility = View.GONE
+        binding.btnRemoveImage.setOnClickListener {
+            binding.ivSelectedImage.setImageResource(R.drawable.ic_cloud_upload)
+            binding.tvUploadHint.text = getString(R.string.tap_to_upload_your_photo)
+            binding.btnRemoveImage.visibility = View.GONE
             isImageSelected = false
         }
 
-        binding?.btnSignUp?.setOnClickListener {
+        binding.btnSignUp.setOnClickListener {
             handleSignUp()
         }
     }
 
     private fun handleSignUp() {
-        val firstName = binding?.etFirstName?.text.toString().trim()
-        val lastName = binding?.etLastName?.text.toString().trim()
-        val phone = binding?.etPhone?.text.toString().trim()
-        val email = binding?.etEmail?.text.toString().trim()
-        val password = binding?.etPassword?.text.toString().trim()
+        val firstName = binding.etFirstName.text.toString().trim()
+        val lastName = binding.etLastName.text.toString().trim()
+        val phone = binding.etPhone.text.toString().trim()
+        val email = binding.etEmail.text.toString().trim()
+        val password = binding.etPassword.text.toString().trim()
 
         if (firstName.isEmpty() || lastName.isEmpty() || email.isEmpty() || password.isEmpty() || phone.isEmpty()) {
             Toast.makeText(requireContext(), "Please fill all fields", Toast.LENGTH_SHORT).show()
             return
         }
 
+        val newUser = User(
+            firstName = firstName,
+            lastName = lastName,
+            email = email,
+            phone = phone
+        )
+
         val imageBitmap: Bitmap? = if (isImageSelected) {
-            (binding?.ivSelectedImage?.drawable as? BitmapDrawable)?.bitmap
+            (binding.ivSelectedImage.drawable as? BitmapDrawable)?.bitmap
         } else {
             null
         }
 
         viewModel.register(
-            email = email,
+            user = newUser,
             password = password,
-            firstName = firstName,
-            lastName = lastName,
-            phone = phone,
             image = imageBitmap
         )
     }
@@ -136,13 +136,13 @@ class SignUpFragment : Fragment() {
         }
 
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
-            binding?.btnSignUp?.isEnabled = !isLoading
-            binding?.btnSignUp?.text = if (isLoading) "Creating Account..." else "Sign Up"
+            binding.btnSignUp.isEnabled = !isLoading
+            binding.btnSignUp.text = if (isLoading) "Creating Account..." else "Sign Up"
         }
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        binding = null
+        _binding = null
     }
 }

@@ -61,14 +61,18 @@
                 android:paddingStart="8dp"
                 android:paddingTop="4dp"
                 android:paddingEnd="8dp"
-                android:paddingBottom="4dp">
+                android:paddingBottom="4dp"
+                android:clickable="false"
+                android:focusable="false">
 
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="28dp"
                     android:layout_height="28dp"
                     app:cardCornerRadius="14dp"
                     app:cardElevation="0dp"
-                    app:strokeWidth="0dp">
+                    app:strokeWidth="0dp"
+                    android:clickable="false"
+                    android:focusable="false">
 
                     <ImageView
                         android:id="@+id/ivAvatar"
@@ -76,7 +80,9 @@
                         android:layout_height="match_parent"
                         android:contentDescription="@string/user_profile"
                         android:scaleType="centerCrop"
-                        android:src="@drawable/ic_person" />
+                        android:src="@drawable/ic_person"
+                        android:clickable="false"
+                        android:focusable="false" />
 
                 </com.google.android.material.card.MaterialCardView>
 
@@ -87,7 +93,9 @@
                     android:contentDescription="@string/dropdown_icon"
                     android:scaleType="fitCenter"
                     android:src="@drawable/ic_toolbar_arrow_down"
-                    app:tint="@color/app_slogan" />
+                    app:tint="@color/app_slogan"
+                    android:clickable="false"
+                    android:focusable="false" />
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>

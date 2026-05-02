@@ -12,12 +12,10 @@ import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.petspotandroid.R
-import com.example.petspotandroid.dao.AppLocalDB
-import com.example.petspotandroid.data.repository.auth.AuthRepository
 import com.example.petspotandroid.databinding.FragmentPostDetailsBinding
 import com.example.petspotandroid.features.authentication.auth.AuthViewModel
-import com.example.petspotandroid.features.authentication.auth.AuthViewModelFactory
 import com.example.petspotandroid.features.comments.CommentsAdapter
+import com.example.petspotandroid.features.user_info.UserProfileDialog
 import com.example.petspotandroid.model.Comment
 import com.example.petspotandroid.model.Post
 import com.squareup.picasso.Picasso
@@ -30,9 +28,7 @@ class PostDetailsDialog : DialogFragment() {
     private val binding get() = _binding!!
 
     private val viewModel: PostDetailsViewModel by viewModels()
-    private val authViewModel: AuthViewModel by viewModels {
-        AuthViewModelFactory(AuthRepository(AppLocalDB.db.userDao))
-    }
+    private val authViewModel: AuthViewModel by viewModels()
 
     private var commentsAdapter: CommentsAdapter? = null
     private var currentPost: Post? = null
@@ -70,8 +66,16 @@ class PostDetailsDialog : DialogFragment() {
             binding.sendCommentButton.isEnabled = firebaseUser != null
         }
 
-        authViewModel.userData.observe(viewLifecycleOwner) { userData ->
+        val onPosterClicked = View.OnClickListener {
+            currentPost?.let { post ->
+                val profileDialog = UserProfileDialog()
+                profileDialog.show(parentFragmentManager, "UserProfileDialog")
+                profileDialog.setUserId(post.authorId)
+            }
         }
+
+        binding.posterName.setOnClickListener(onPosterClicked)
+        binding.userProfileImage.setOnClickListener(onPosterClicked)
 
         binding.closeButton.setOnClickListener { dismiss() }
         binding.sendCommentButton.setOnClickListener { handleNewComment() }
@@ -112,6 +116,9 @@ class PostDetailsDialog : DialogFragment() {
     private fun setupRecyclerView() {
         binding.commentsRecyclerView.layoutManager = LinearLayoutManager(requireContext())
         commentsAdapter = CommentsAdapter(emptyList()) { commenterId ->
+            val profileDialog = UserProfileDialog()
+            profileDialog.setUserId(commenterId)
+            profileDialog.show(parentFragmentManager, "UserProfileDialog")
         }
         binding.commentsRecyclerView.adapter = commentsAdapter
     }

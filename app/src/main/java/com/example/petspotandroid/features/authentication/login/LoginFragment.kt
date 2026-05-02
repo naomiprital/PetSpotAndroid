@@ -10,28 +10,21 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.example.petspotandroid.R
-import com.example.petspotandroid.dao.AppLocalDB
-import com.example.petspotandroid.data.repository.auth.AuthRepository
 import com.example.petspotandroid.databinding.FragmentLoginBinding
 import com.example.petspotandroid.features.authentication.auth.AuthViewModel
-import com.example.petspotandroid.features.authentication.auth.AuthViewModelFactory
 
 class LoginFragment : Fragment() {
 
-    private var binding: FragmentLoginBinding? = null
-
-    private val viewModel: AuthViewModel by viewModels {
-        val userDao = AppLocalDB.db.userDao
-        val repository = AuthRepository(userDao)
-        AuthViewModelFactory(repository)
-    }
+    private var _binding: FragmentLoginBinding? = null
+    private val binding get() = _binding!!
+    private val viewModel: AuthViewModel by viewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        binding = FragmentLoginBinding.inflate(inflater, container, false)
-        return binding?.root
+    ): View {
+        _binding = FragmentLoginBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -42,9 +35,9 @@ class LoginFragment : Fragment() {
     }
 
     private fun setupListeners() {
-        binding?.btnLogin?.setOnClickListener {
-            val email = binding?.etEmail?.text.toString().trim()
-            val password = binding?.etPassword?.text.toString().trim()
+        binding.btnLogin.setOnClickListener {
+            val email = binding.etEmail.text.toString().trim()
+            val password = binding.etPassword.text.toString().trim()
 
             if (email.isNotEmpty() && password.isNotEmpty()) {
                 viewModel.login(email, password)
@@ -53,7 +46,7 @@ class LoginFragment : Fragment() {
             }
         }
 
-        binding?.tvForgotPassword?.setOnClickListener {
+        binding.tvForgotPassword.setOnClickListener {
             findNavController().navigate(R.id.action_authFragment_to_forgotPasswordFragment)
         }
     }
@@ -89,18 +82,18 @@ class LoginFragment : Fragment() {
 
     @SuppressLint("SetTextI18n")
     private fun disableLoginButton() {
-        binding?.btnLogin?.isEnabled = false
-        binding?.btnLogin?.text = "Logging in..."
+        binding.btnLogin.isEnabled = false
+        binding.btnLogin.text = "Logging in..."
     }
 
     @SuppressLint("SetTextI18n")
     private fun enableLoginButton() {
-        binding?.btnLogin?.isEnabled = true
-        binding?.btnLogin?.text = "Welcome Back!"
+        binding.btnLogin.isEnabled = true
+        binding.btnLogin.text = "Welcome Back!"
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        binding = null
+        _binding = null
     }
 }

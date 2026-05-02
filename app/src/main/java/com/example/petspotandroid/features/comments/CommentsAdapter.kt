@@ -55,7 +55,7 @@ class CommentsAdapter(private var comments: List<Comment>, private val onComment
             val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
             timeView.text = timeFormat.format(Date(comment.timestamp))
 
-            if (!comment.authorProfileImageUrl.isNullOrEmpty()) {
+            if (comment.authorProfileImageUrl.isNotEmpty()) {
                 Picasso.get()
                     .load(comment.authorProfileImageUrl)
                     .placeholder(R.drawable.ic_person)

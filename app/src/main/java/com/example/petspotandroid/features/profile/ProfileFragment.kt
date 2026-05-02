@@ -15,11 +15,8 @@ import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.petspotandroid.R
-import com.example.petspotandroid.dao.AppLocalDB
-import com.example.petspotandroid.data.repository.auth.AuthRepository
 import com.example.petspotandroid.databinding.FragmentProfileBinding
 import com.example.petspotandroid.features.authentication.auth.AuthViewModel
-import com.example.petspotandroid.features.authentication.auth.AuthViewModelFactory
 import com.example.petspotandroid.features.new_report.NewReportDialog
 import com.example.petspotandroid.features.post_details.PostDetailsDialog
 import com.example.petspotandroid.features.posts_list.PostsViewModel
@@ -30,11 +27,7 @@ class ProfileFragment : Fragment() {
 
     private var _binding: FragmentProfileBinding? = null
     private val binding get() = _binding!!
-
-    private val authViewModel: AuthViewModel by activityViewModels {
-        val repository = AuthRepository(AppLocalDB.db.userDao)
-        AuthViewModelFactory(repository)
-    }
+    private val authViewModel: AuthViewModel by activityViewModels()
 
     private val postsViewModel: PostsViewModel by viewModels()
 
@@ -65,6 +58,8 @@ class ProfileFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        authViewModel.refreshUserData()
 
         setupRecyclerView()
         setupObservers()
@@ -102,11 +97,11 @@ class ProfileFragment : Fragment() {
         authViewModel.userData.observe(viewLifecycleOwner) { user ->
             user?.let {
                 binding.tvUserName.text = "${it.firstName} ${it.lastName}"
-                binding.tvEmail.text = user.email
-                binding.tvPhone.text = user.phone
+                binding.tvEmail.text = it.email
+                binding.tvPhone.text = it.phone
 
                 val joinYear = Calendar.getInstance().apply {
-                    timeInMillis = user.createdAt
+                    timeInMillis = it.createdAt
                 }.get(Calendar.YEAR)
                 binding.tvMemberSince.text = getString(R.string.community_member_since, joinYear)
 

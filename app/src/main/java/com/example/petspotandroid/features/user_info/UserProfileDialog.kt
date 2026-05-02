@@ -1,4 +1,4 @@
-package com.example.petspotandroid.features.profile
+package com.example.petspotandroid.features.user_info
 
 import android.annotation.SuppressLint
 import android.os.Bundle
@@ -9,17 +9,17 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.fragment.app.DialogFragment
+import androidx.fragment.app.viewModels
 import com.example.petspotandroid.R
-import com.example.petspotandroid.model.User
-import com.google.firebase.firestore.FirebaseFirestore
 import com.squareup.picasso.Picasso
 
 class UserProfileDialog : DialogFragment() {
 
-    private var targetUser: User? = null
+    private val viewModel: UserProfileViewModel by viewModels()
+    private var targetUserId: String? = null
 
-    fun setUser(user: User) {
-        this.targetUser = user
+    fun setUserId(userId: String) {
+        this.targetUserId = userId
     }
 
     override fun onCreateView(
@@ -44,45 +44,31 @@ class UserProfileDialog : DialogFragment() {
 
         btnClose.setOnClickListener { dismiss() }
 
-        targetUser?.let { user ->
-            tvUserName.text = "${user.firstName} ${user.lastName}"
-            tvUserHandle.text = user.email
-            tvContactEmail.text = user.email
-            tvContactPhone.text = user.phone
+        targetUserId?.let { userId ->
+            viewModel.getUserData(userId).observe(viewLifecycleOwner) { user ->
+                user?.let {
+                    tvUserName.text = "${it.firstName} ${it.lastName}"
+                    tvUserHandle.text = it.email
+                    tvContactEmail.text = it.email
+                    tvContactPhone.text = it.phone
 
-            if (!user.avatarUrl.isNullOrEmpty()) {
-                Picasso.get()
-                    .load(user.avatarUrl)
-                    .placeholder(R.drawable.ic_person)
-                    .error(R.drawable.ic_person)
-                    .fit()
-                    .centerCrop()
-                    .into(ivProfileImage)
-            } else {
-                ivProfileImage.setImageResource(R.drawable.ic_person)
+                    if (!it.avatarUrl.isNullOrEmpty()) {
+                        Picasso.get()
+                            .load(it.avatarUrl)
+                            .placeholder(R.drawable.ic_person)
+                            .error(R.drawable.ic_person)
+                            .fit()
+                            .centerCrop()
+                            .into(ivProfileImage)
+                    } else {
+                        ivProfileImage.setImageResource(R.drawable.ic_person)
+                    }
+                }
             }
 
-            val db = FirebaseFirestore.getInstance()
-            val userId = user.id
-
-            if (userId.isNotEmpty()) {
-                db.collection("posts")
-                    .whereEqualTo("authorId", userId)
-                    .get()
-                    .addOnSuccessListener { documents ->
-                        val totalReports = documents.size()
-
-                        val reunions = documents.count { doc ->
-                            doc.getBoolean("isResolved") == true
-                        }
-
-                        tvReportsCount.text = totalReports.toString()
-                        tvReunionsCount.text = reunions.toString()
-                    }
-                    .addOnFailureListener {
-                        tvReportsCount.text = "-"
-                        tvReunionsCount.text = "-"
-                    }
+            viewModel.getUserStats(userId).observe(viewLifecycleOwner) { stats ->
+                tvReportsCount.text = stats.first.toString()
+                tvReunionsCount.text = stats.second.toString()
             }
         }
     }
