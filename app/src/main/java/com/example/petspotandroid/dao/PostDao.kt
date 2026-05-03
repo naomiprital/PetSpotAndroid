@@ -6,25 +6,29 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.example.petspotandroid.data.models.Post
+import androidx.room.Update
+import com.example.petspotandroid.model.Post
 
 @Dao
 interface PostDao {
-    @Query("SELECT * FROM posts ORDER BY createdAt DESC")
+    @Query("SELECT * FROM posts WHERE isResolved = 0 ORDER BY createdAt DESC")
     fun getAllPosts(): LiveData<List<Post>>
+
+    @Query("SELECT * FROM posts")
+    fun getAllPostsSync(): List<Post>
+
+    @Update
+    fun updatePost(post: Post)
 
     @Query("SELECT * FROM posts WHERE authorId = :userId ORDER BY createdAt DESC")
     fun getPostsByUser(userId: String): LiveData<List<Post>>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(post: Post): Long
+    @Query("SELECT * FROM posts WHERE id = :postId")
+    fun getPostById(postId: String): LiveData<Post>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertPosts(posts: List<Post>)
+    fun insertPost(posts: Post)
 
     @Delete
-    suspend fun delete(post: Post): Int
-
-    @Query("DELETE FROM posts")
-    suspend fun deleteAll()
+    fun delete(post: Post)
 }

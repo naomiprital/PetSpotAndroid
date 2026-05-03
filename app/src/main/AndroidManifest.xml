@@ -16,11 +16,15 @@
             <action android:name="com.google.android.gms.common.service.START" />
         </intent>
         <intent>
+            <action android:name="com.google.android.gsf.action.GET_GLS" />
+        </intent>
+        <intent>
             <action android:name="com.google.firebase.auth.api.gms.service.START" />
         </intent>
     </queries>
 
     <application
+        android:name=".base.MyApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -43,6 +47,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -52,6 +57,7 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+
     </application>
 
 </manifest>
