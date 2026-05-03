@@ -6,10 +6,8 @@ import com.example.petspotandroid.base.FirestorePostsCompletion
 import com.example.petspotandroid.base.FirestoreUserCompletion
 import com.example.petspotandroid.model.Post
 import com.example.petspotandroid.model.User
-import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.firestore
 
 class FirebaseModel {
     private val db = FirebaseFirestore.getInstance()
@@ -67,7 +65,6 @@ class FirebaseModel {
     }
 
     fun addPost(post: Post, callback: (Boolean, String?) -> Unit) {
-        val db = Firebase.firestore
         db.collection(POSTS)
             .document(post.id)
             .set(post)
@@ -104,7 +101,6 @@ class FirebaseModel {
     }
 
     fun updatePost(post: Post, callback: (Boolean, String?) -> Unit) {
-        val db = Firebase.firestore
         db.collection(POSTS)
             .document(post.id)
             .set(post)
