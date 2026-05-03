@@ -1,10 +1,10 @@
 package com.example.petspotandroid.data.models
 
+import com.example.petspotandroid.base.FirebaseAuthCompletion
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 
-typealias FirebaseAuthCompletion = (success: Boolean, error: String?) -> Unit
 
 class FirebaseAuthModel {
 

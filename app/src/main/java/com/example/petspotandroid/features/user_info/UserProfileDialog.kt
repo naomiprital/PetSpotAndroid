@@ -52,17 +52,13 @@ class UserProfileDialog : DialogFragment() {
                     tvContactEmail.text = it.email
                     tvContactPhone.text = it.phone
 
-                    if (!it.avatarUrl.isNullOrEmpty()) {
-                        Picasso.get()
-                            .load(it.avatarUrl)
-                            .placeholder(R.drawable.ic_person)
-                            .error(R.drawable.ic_person)
-                            .fit()
-                            .centerCrop()
-                            .into(ivProfileImage)
-                    } else {
-                        ivProfileImage.setImageResource(R.drawable.ic_person)
-                    }
+                    Picasso.get()
+                        .load(it.avatarUrl)
+                        .placeholder(R.drawable.ic_person)
+                        .error(R.drawable.ic_person)
+                        .fit()
+                        .centerCrop()
+                        .into(ivProfileImage)
                 }
             }
 

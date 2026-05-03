@@ -1,17 +1,15 @@
 package com.example.petspotandroid.data.models
 
+import android.util.Log
+import com.example.petspotandroid.base.FirestoreCompletion
+import com.example.petspotandroid.base.FirestorePostsCompletion
+import com.example.petspotandroid.base.FirestoreUserCompletion
 import com.example.petspotandroid.model.Post
 import com.example.petspotandroid.model.User
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.firestore
-
-typealias FirestoreCompletion = (success: Boolean, error: String?) -> Unit
-typealias FirestoreUserCompletion = (user: User?, error: String?) -> Unit
-typealias FirestoreUsersCompletion = (users: List<User>) -> Unit
-typealias FirestorePostCompletion = (post: Post?, error: String?) -> Unit
-typealias FirestorePostsCompletion = (posts: List<Post>) -> Unit
 
 class FirebaseModel {
     private val db = FirebaseFirestore.getInstance()
@@ -56,24 +54,6 @@ class FirebaseModel {
             }
     }
 
-    fun getAllUsers(since: Long, completion: FirestoreUsersCompletion) {
-        db.collection(USERS)
-            .whereGreaterThanOrEqualTo(User.LAST_UPDATED_KEY, Timestamp(since / 1000, 0))
-            .get()
-            .addOnCompleteListener { result ->
-                if (result.isSuccessful) {
-                    val users = result.result.mapNotNull { document ->
-                            val data = document.data.toMutableMap()
-                            data[User.ID_KEY] = document.id
-                            User.fromJson(data)
-                    }
-                    completion(users)
-                } else {
-                    completion(emptyList())
-                }
-            }
-    }
-
     fun updateUser(user: User, completion: FirestoreCompletion) {
         db.collection(USERS)
             .document(user.id)
@@ -88,7 +68,7 @@ class FirebaseModel {
 
     fun addPost(post: Post, callback: (Boolean, String?) -> Unit) {
         val db = Firebase.firestore
-        db.collection("posts")
+        db.collection(POSTS)
             .document(post.id)
             .set(post)
             .addOnCompleteListener { task ->
@@ -97,29 +77,6 @@ class FirebaseModel {
                 } else {
                     callback(false, task.exception?.message ?: "Unknown error occurred while adding to Firestore")
                 }
-            }
-    }
-
-    fun getPost(postId: String, completion: FirestorePostCompletion) {
-        db.collection(POSTS)
-            .document(postId)
-            .get()
-            .addOnSuccessListener { document ->
-                if (document.exists() && document.data != null) {
-                    try {
-                        val data = document.data!!.toMutableMap()
-                        data[Post.ID_KEY] = document.id
-                        val post = Post.fromJson(data)
-                        completion(post, null)
-                    } catch (e: Exception) {
-                        completion(null, e.message)
-                    }
-                } else {
-                    completion(null, "Post not found")
-                }
-            }
-            .addOnFailureListener { exception ->
-                completion(null, exception.message)
             }
     }
 
@@ -134,7 +91,8 @@ class FirebaseModel {
                             val data = document.data.toMutableMap()
                             data[Post.ID_KEY] = document.id
                             Post.fromJson(data)
-                        } catch (e: Exception) {
+                        } catch (exception: Exception) {
+                            Log.e("FirebaseModel", "Error converting Firestore document to Post", exception)
                             null
                         }
                     }
@@ -147,7 +105,7 @@ class FirebaseModel {
 
     fun updatePost(post: Post, callback: (Boolean, String?) -> Unit) {
         val db = Firebase.firestore
-        db.collection("posts")
+        db.collection(POSTS)
             .document(post.id)
             .set(post)
             .addOnCompleteListener { task ->
@@ -168,6 +126,20 @@ class FirebaseModel {
             }
             .addOnFailureListener { exception ->
                 completion(false, exception.message)
+            }
+    }
+
+    fun getUserPostsCount(userId: String, onComplete: (Int, Int) -> Unit) {
+        db.collection("posts")
+            .whereEqualTo("authorId", userId)
+            .get()
+            .addOnSuccessListener { docs ->
+                val total = docs.size()
+                val reunions = docs.count { it.getBoolean("isResolved") == true }
+                onComplete(total, reunions)
+            }
+            .addOnFailureListener {
+                onComplete(0, 0)
             }
     }
 }

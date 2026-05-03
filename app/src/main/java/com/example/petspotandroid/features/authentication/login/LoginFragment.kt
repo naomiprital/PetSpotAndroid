@@ -1,6 +1,5 @@
 package com.example.petspotandroid.features.authentication.login
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -55,11 +54,7 @@ class LoginFragment : Fragment() {
 
     private fun setupObservers() {
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
-            if (isLoading) {
-                disableLoginButton()
-            } else {
-                enableLoginButton()
-            }
+            updateLoadingState(isLoading)
         }
 
         viewModel.user.observe(viewLifecycleOwner) { firebaseUser ->
@@ -82,16 +77,11 @@ class LoginFragment : Fragment() {
         }
     }
 
-    @SuppressLint("SetTextI18n")
-    private fun disableLoginButton() {
-        binding.btnLogin.isEnabled = false
-        binding.btnLogin.text = "Logging in..."
-    }
-
-    @SuppressLint("SetTextI18n")
-    private fun enableLoginButton() {
-        binding.btnLogin.isEnabled = true
-        binding.btnLogin.text = "Welcome Back!"
+    private fun updateLoadingState(isLoading: Boolean) {
+        binding.btnLogin.apply {
+            isEnabled = !isLoading
+            text = if (isLoading) "Logging in..." else "Welcome Back!"
+        }
     }
 
     override fun onDestroyView() {

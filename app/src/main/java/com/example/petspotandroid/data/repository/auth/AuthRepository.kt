@@ -30,7 +30,7 @@ class AuthRepository private constructor() {
     fun getUserLiveData(userId: String): LiveData<User?> = userDao.getUserById(userId)
 
     fun refreshUserData(userId: String) {
-        firestoreModel.getUser(userId) { remoteUser, error ->
+        firestoreModel.getUser(userId) { remoteUser, _ ->
             if (remoteUser != null) {
                 executor.execute {
                     userDao.insertUser(remoteUser)
@@ -154,6 +154,20 @@ class AuthRepository private constructor() {
         }
     }
 
+    fun getUserById(userId: String): LiveData<User?> {
+        return userDao.getUserById(userId)
+    }
+
+    fun getUserStats(userId: String, callback: (Pair<Int, Int>) -> Unit) {
+        executor.execute {
+            firestoreModel.getUserPostsCount(userId) { total, reunions ->
+                mainHandler.post {
+                    callback(Pair(total, reunions))
+                }
+            }
+        }
+    }
+
     private fun saveUpdatedUser(user: User, callback: (Result<User>) -> Unit) {
         firestoreModel.updateUser(user) { success, error ->
             if (success) {
@@ -164,7 +178,7 @@ class AuthRepository private constructor() {
                     val allPosts = postDao.getAllPostsSync()
                     for (post in allPosts) {
                         var postModified = false
-                        var updatedPost = if (post.authorId == user.id) {
+                        val updatedPost = if (post.authorId == user.id) {
                             postModified = true
                             post.copy(userName = fullName, authorProfileImageUrl = user.avatarUrl)
                         } else {

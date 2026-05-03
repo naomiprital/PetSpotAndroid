@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.util.Log
 import java.io.ByteArrayOutputStream
 
 object ImageHelper {
@@ -16,7 +17,8 @@ object ImageHelper {
                     outputStream.toByteArray()
                 }
             }
-        } catch (e: Exception) {
+        } catch (exception: Exception) {
+            Log.e("ImageHelper", "Failed to compress image from URI: $uri", exception)
             null
         }
     }
