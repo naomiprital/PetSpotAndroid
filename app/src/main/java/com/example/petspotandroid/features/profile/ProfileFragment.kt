@@ -140,6 +140,15 @@ class ProfileFragment : Fragment() {
         authViewModel.errorMessage.observe(viewLifecycleOwner) { msg ->
             msg?.let { Toast.makeText(requireContext(), it, Toast.LENGTH_SHORT).show() }
         }
+
+        authViewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
+            binding.btnSaveProfile.apply {
+                isEnabled = !isLoading
+                text = if (isLoading) "Saving..." else "Save Changes"
+            }
+
+            binding.btnCancelEdit.isEnabled = !isLoading
+        }
     }
 
     private fun setupListeners() {

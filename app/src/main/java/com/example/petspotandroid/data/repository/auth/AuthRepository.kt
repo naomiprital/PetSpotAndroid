@@ -4,16 +4,12 @@ import android.graphics.Bitmap
 import android.os.Looper
 import androidx.core.os.HandlerCompat
 import androidx.lifecycle.LiveData
-import com.example.petspotandroid.base.MyApplication
 import com.example.petspotandroid.dao.AppLocalDB
 import com.example.petspotandroid.data.models.FirebaseAuthModel
 import com.example.petspotandroid.data.models.FirebaseModel
 import com.example.petspotandroid.data.models.FirebaseStorageModel
 import com.example.petspotandroid.model.User
-import com.google.firebase.Timestamp
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.firestore.FirebaseFirestore
 import java.util.concurrent.Executors
 
 class AuthRepository private constructor() {
@@ -163,6 +159,36 @@ class AuthRepository private constructor() {
             if (success) {
                 executor.execute {
                     userDao.insertUser(user)
+                    val fullName = "${user.firstName} ${user.lastName}"
+                    val postDao = AppLocalDB.db.postDao
+                    val allPosts = postDao.getAllPostsSync()
+                    for (post in allPosts) {
+                        var postModified = false
+                        var updatedPost = if (post.authorId == user.id) {
+                            postModified = true
+                            post.copy(userName = fullName, authorProfileImageUrl = user.avatarUrl)
+                        } else {
+                            post
+                        }
+
+                        val updatedComments = updatedPost.comments.map { comment ->
+                            if (comment.authorId == user.id) {
+                                postModified = true
+                                comment.copy(
+                                    authorName = fullName,
+                                    authorProfileImageUrl = user.avatarUrl ?: ""
+                                )
+                            } else {
+                                comment
+                            }
+                        }
+
+                        if (postModified) {
+                            val finalPost = updatedPost.copy(comments = updatedComments)
+                            postDao.updatePost(finalPost)
+                        }
+                    }
+
                     mainHandler.post { callback(Result.success(user)) }
                 }
             } else {
