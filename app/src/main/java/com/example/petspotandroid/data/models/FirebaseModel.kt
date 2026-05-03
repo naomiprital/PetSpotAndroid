@@ -130,7 +130,7 @@ class FirebaseModel {
     }
 
     fun getUserPostsCount(userId: String, onComplete: (Int, Int) -> Unit) {
-        db.collection("posts")
+        db.collection(POSTS)
             .whereEqualTo("authorId", userId)
             .get()
             .addOnSuccessListener { docs ->
