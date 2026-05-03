@@ -6,6 +6,8 @@ import androidx.core.os.HandlerCompat
 import androidx.lifecycle.LiveData
 import com.example.petspotandroid.base.MyApplication
 import com.example.petspotandroid.dao.AppLocalDB
+import com.example.petspotandroid.data.models.FirebaseAuthModel
+import com.example.petspotandroid.data.models.FirebaseModel
 import com.example.petspotandroid.data.models.FirebaseStorageModel
 import com.example.petspotandroid.model.User
 import com.google.firebase.Timestamp
@@ -21,66 +23,103 @@ class AuthRepository private constructor() {
     }
 
     private val userDao = AppLocalDB.db.userDao
-    private val auth = FirebaseAuth.getInstance()
-    private val firestore = FirebaseFirestore.getInstance()
-    private val firebaseStorageModel = FirebaseStorageModel()
+
+    private val authModel = FirebaseAuthModel()
+    private val firestoreModel = FirebaseModel()
+    private val storageModel = FirebaseStorageModel()
+
     private val executor = Executors.newFixedThreadPool(4)
     private val mainHandler = HandlerCompat.createAsync(Looper.getMainLooper())
 
     fun getUserLiveData(userId: String): LiveData<User?> = userDao.getUserById(userId)
 
     fun refreshUserData(userId: String) {
-        firestore.collection("users").document(userId).get()
-            .addOnSuccessListener { document ->
-                document.data?.let { data ->
-                    val remoteUser = User.fromJson(data)
-                    executor.execute {
-                        userDao.insertUser(remoteUser)
-                        remoteUser.lastUpdated?.let {
-                            if (it > User.lastUpdated) User.lastUpdated = it
-                        }
+        firestoreModel.getUser(userId) { remoteUser, error ->
+            if (remoteUser != null) {
+                executor.execute {
+                    userDao.insertUser(remoteUser)
+                    remoteUser.lastUpdated?.let {
+                        if (it > User.lastUpdated) User.lastUpdated = it
                     }
                 }
             }
+        }
     }
 
     fun login(email: String, password: String, callback: (Result<FirebaseUser>) -> Unit) {
-        auth.signInWithEmailAndPassword(email, password)
-            .addOnSuccessListener { result ->
-                result.user?.let {
-                    refreshUserData(it.uid)
-                    callback(Result.success(it))
+        authModel.signInUser(email, password) { success, error ->
+            if (success) {
+                val firebaseUser = authModel.getCurrentUser()
+                if (firebaseUser != null) {
+                    refreshUserData(firebaseUser.uid)
+                    callback(Result.success(firebaseUser))
+                } else {
+                    callback(Result.failure(Exception("User session error")))
                 }
-            }.addOnFailureListener { callback(Result.failure(it)) }
+            } else {
+                callback(Result.failure(Exception(error ?: "Login failed")))
+            }
+        }
     }
 
     fun register(user: User, password: String, image: Bitmap?, callback: (Result<FirebaseUser>) -> Unit) {
-        auth.createUserWithEmailAndPassword(user.email, password)
-            .addOnSuccessListener { authResult ->
-                val firebaseUser = authResult.user ?: return@addOnSuccessListener
-
+        authModel.createUser(email = user.email, password = password) { success, error ->
+            if (success) {
+                val firebaseUser = authModel.getCurrentUser() ?: return@createUser
                 var userProfile = user.copy(id = firebaseUser.uid, lastUpdated = System.currentTimeMillis())
 
                 if (image != null) {
-                    firebaseStorageModel.uploadUserImage(image, userProfile) { url ->
+                    storageModel.uploadUserImage(image, userProfile) { url ->
                         if (url != null) userProfile = userProfile.copy(avatarUrl = url)
-                        saveUserToDatabase(userProfile, firebaseUser, callback)
+                        saveUserToFirestore(userProfile, firebaseUser, callback)
                     }
                 } else {
-                    saveUserToDatabase(userProfile, firebaseUser, callback)
+                    saveUserToFirestore(userProfile, firebaseUser, callback)
                 }
-            }.addOnFailureListener { callback(Result.failure(it)) }
+            } else {
+                callback(Result.failure(Exception(error)))
+            }
+        }
     }
 
-    private fun <T> saveUserToDatabase(user: User, resultData: T, callback: (Result<T>) -> Unit) {
-        firestore.collection("users").document(user.id).set(user.toJson)
-            .addOnSuccessListener {
+    private fun <T> saveUserToFirestore(user: User, resultData: T, callback: (Result<T>) -> Unit) {
+        firestoreModel.createUser(user) { success, error ->
+            if (success) {
                 executor.execute {
                     userDao.insertUser(user)
                     user.lastUpdated?.let { User.lastUpdated = it }
                     mainHandler.post { callback(Result.success(resultData)) }
                 }
-            }.addOnFailureListener { callback(Result.failure(it)) }
+            } else {
+                mainHandler.post { callback(Result.failure(Exception(error))) }
+            }
+        }
+    }
+
+    fun logout() {
+        authModel.logout()
+    }
+
+    fun getCurrentUser(): FirebaseUser? = authModel.getCurrentUser()
+
+    fun checkEmailExists(email: String, callback: (Result<Boolean>) -> Unit) {
+        authModel.checkEmailExists(email) { exists, error ->
+            if (error == null) {
+                callback(Result.success(exists))
+            } else {
+                callback(Result.failure(Exception(error)))
+            }
+        }
+    }
+
+    fun resetPassword(email: String, callback: (Result<Boolean>) -> Unit) {
+        authModel.resetPassword(email) { success, error ->
+            if (success) {
+                callback(Result.success(true))
+            } else {
+                callback(Result.failure(Exception(error)))
+            }
+        }
     }
 
     fun updateUserProfile(
@@ -90,62 +129,45 @@ class AuthRepository private constructor() {
         image: Bitmap?,
         callback: (Result<User>) -> Unit
     ) {
-        val currentUser = auth.currentUser
-        if (currentUser == null) {
+        val firebaseUser = authModel.getCurrentUser()
+        if (firebaseUser == null) {
             callback(Result.failure(Exception("User not logged in")))
             return
         }
-        val userId = currentUser.uid
 
-        firestore.collection("users").document(userId).get()
-            .addOnSuccessListener { document ->
-                val data = document.data
-                val existingUser = if (data != null) User.fromJson(data) else null
+        firestoreModel.getUser(firebaseUser.uid) { existingUser, error ->
+            if (existingUser == null) {
+                callback(Result.failure(Exception(error ?: "User not found")))
+                return@getUser
+            }
 
-                if (existingUser == null) {
-                    callback(Result.failure(Exception("User not found")))
-                    return@addOnSuccessListener
+            var updatedUser = existingUser.copy(
+                firstName = firstName,
+                lastName = lastName,
+                phone = phone
+            )
+
+            if (image != null) {
+                storageModel.uploadUserImage(image, updatedUser) { url ->
+                    if (url != null) updatedUser = updatedUser.copy(avatarUrl = url)
+                    saveUpdatedUser(updatedUser, callback)
                 }
+            } else {
+                saveUpdatedUser(updatedUser, callback)
+            }
+        }
+    }
 
-                var updatedUser = existingUser.copy(
-                    firstName = firstName,
-                    lastName = lastName,
-                    phone = phone
-                )
-
-                if (image != null) {
-                    firebaseStorageModel.uploadUserImage(image, updatedUser) { imageUrl ->
-                        if (imageUrl != null) updatedUser = updatedUser.copy(avatarUrl = imageUrl)
-                        saveUserToDatabase(updatedUser, updatedUser, callback)
-                    }
-                } else {
-                    saveUserToDatabase(updatedUser, updatedUser, callback)
+    private fun saveUpdatedUser(user: User, callback: (Result<User>) -> Unit) {
+        firestoreModel.updateUser(user) { success, error ->
+            if (success) {
+                executor.execute {
+                    userDao.insertUser(user)
+                    mainHandler.post { callback(Result.success(user)) }
                 }
+            } else {
+                mainHandler.post { callback(Result.failure(Exception(error))) }
             }
-            .addOnFailureListener { exception ->
-                callback(Result.failure(exception))
-            }
-    }
-
-    fun logout() {
-        auth.signOut()
-    }
-
-    fun getCurrentUser(): FirebaseUser? {
-        return auth.currentUser
-    }
-
-    fun checkEmailExists(email: String, callback: (Result<Boolean>) -> Unit) {
-        auth.fetchSignInMethodsForEmail(email)
-            .addOnSuccessListener { result ->
-                callback(Result.success(!result.signInMethods.isNullOrEmpty()))
-            }
-            .addOnFailureListener { exception -> callback(Result.failure(exception)) }
-    }
-
-    fun resetPassword(email: String, callback: (Result<Boolean>) -> Unit) {
-        auth.sendPasswordResetEmail(email)
-            .addOnSuccessListener { callback(Result.success(true)) }
-            .addOnFailureListener { exception -> callback(Result.failure(exception)) }
+        }
     }
 }

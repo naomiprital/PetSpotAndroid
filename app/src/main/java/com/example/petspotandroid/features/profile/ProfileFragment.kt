@@ -1,5 +1,6 @@
 package com.example.petspotandroid.features.profile
 
+import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
@@ -17,7 +18,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.petspotandroid.R
 import com.example.petspotandroid.databinding.FragmentProfileBinding
 import com.example.petspotandroid.features.authentication.auth.AuthViewModel
-import com.example.petspotandroid.features.new_report.NewReportDialog
+import com.example.petspotandroid.features.report_form.ReportFormDialog
 import com.example.petspotandroid.features.post_details.PostDetailsDialog
 import com.example.petspotandroid.features.posts_list.PostsViewModel
 import com.squareup.picasso.Picasso
@@ -75,7 +76,7 @@ class ProfileFragment : Fragment() {
                 }
             },
             onEditClick = { post ->
-                NewReportDialog.newInstance(post.id).show(parentFragmentManager, "EditReportDialog")
+                ReportFormDialog.newInstance(post.id).show(parentFragmentManager, "EditReportDialog")
             },
             onDeleteClick = { post ->
                 showDeleteConfirmation(post.id)
@@ -93,6 +94,7 @@ class ProfileFragment : Fragment() {
         binding.rvUserPosts.adapter = adapter
     }
 
+    @SuppressLint("SetTextI18n")
     private fun setupObservers() {
         authViewModel.userData.observe(viewLifecycleOwner) { user ->
             user?.let {

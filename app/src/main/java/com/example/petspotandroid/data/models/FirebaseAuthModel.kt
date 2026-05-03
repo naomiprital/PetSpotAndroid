@@ -35,4 +35,24 @@ class FirebaseAuthModel {
     }
 
     fun getCurrentUser() = auth.currentUser
+
+    fun checkEmailExists(email: String, completion: (Boolean, String?) -> Unit) {
+        auth.fetchSignInMethodsForEmail(email)
+            .addOnSuccessListener { result ->
+                completion(!result.signInMethods.isNullOrEmpty(), null)
+            }
+            .addOnFailureListener { exception ->
+                completion(false, exception.message)
+            }
+    }
+
+    fun resetPassword(email: String, completion: (Boolean, String?) -> Unit) {
+        auth.sendPasswordResetEmail(email)
+            .addOnSuccessListener {
+                completion(true, null)
+            }
+            .addOnFailureListener { exception ->
+                completion(false, exception.message)
+            }
+    }
 }

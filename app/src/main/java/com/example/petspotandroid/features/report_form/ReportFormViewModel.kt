@@ -1,4 +1,4 @@
-package com.example.petspotandroid.features.new_report
+package com.example.petspotandroid.features.report_form
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModel
 import com.example.petspotandroid.data.repository.post.PostRepository
 import com.example.petspotandroid.model.Post
 
-class NewReportViewModel : ViewModel() {
+class ReportFormViewModel : ViewModel() {
 
     private val repository = PostRepository.instance
 

@@ -14,7 +14,4 @@ interface UserDao {
 
     @Query("SELECT * FROM users WHERE id = :id LIMIT 1")
     fun getUserById(id: String): LiveData<User?>
-
-    @Query("SELECT * FROM users WHERE id = :id LIMIT 1")
-    fun getUserByIdSync(id: String): User?
 }

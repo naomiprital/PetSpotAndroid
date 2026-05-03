@@ -1,4 +1,4 @@
-package com.example.petspotandroid.features.new_report
+package com.example.petspotandroid.features.report_form
 
 import android.app.AlertDialog
 import android.content.res.ColorStateList
@@ -19,14 +19,11 @@ import com.example.petspotandroid.R
 import com.example.petspotandroid.databinding.FragmentNewReportBinding
 import com.example.petspotandroid.features.authentication.auth.AuthViewModel
 import com.example.petspotandroid.model.Post
-import com.google.android.material.datepicker.MaterialDatePicker
-import com.google.android.material.timepicker.MaterialTimePicker
-import com.google.android.material.timepicker.TimeFormat
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
-class NewReportDialog : DialogFragment() {
+class ReportFormDialog : DialogFragment() {
 
     private var _binding: FragmentNewReportBinding? = null
     private val binding get() = _binding!!
@@ -36,13 +33,13 @@ class NewReportDialog : DialogFragment() {
     private var editingPost: Post? = null
 
     private val authViewModel: AuthViewModel by viewModels()
-    private val newReportViewModel: NewReportViewModel by viewModels()
+    private val reportFormViewModel: ReportFormViewModel by viewModels()
 
     companion object {
         private const val ARG_POST_ID = "arg_post_id"
 
-        fun newInstance(postId: String? = null): NewReportDialog {
-            return NewReportDialog().apply {
+        fun newInstance(postId: String? = null): ReportFormDialog {
+            return ReportFormDialog().apply {
                 arguments = Bundle().apply {
                     putString(ARG_POST_ID, postId)
                 }
@@ -71,7 +68,7 @@ class NewReportDialog : DialogFragment() {
         setupAnimalDropdown()
 
         if (postId != null) {
-            newReportViewModel.getPost(postId).observe(viewLifecycleOwner) { post ->
+            reportFormViewModel.getPost(postId).observe(viewLifecycleOwner) { post ->
                 post?.let {
                     editingPost = it
                     setupUIWithPost(it)
@@ -101,12 +98,18 @@ class NewReportDialog : DialogFragment() {
             if (isChecked) updateToggleColors(id)
         }
         binding.uploadImageButton.setOnClickListener { showImageSourceDialog() }
-        binding.dateTime.setOnClickListener { showDateTimePicker() }
+
+        binding.dateTime.setOnClickListener {
+            DateTimePickerHelper.show(parentFragmentManager) { formattedDate ->
+                binding.dateTime.setText(formattedDate)
+            }
+        }
+
         binding.publishButton.setOnClickListener { handlePublish() }
     }
 
     private fun setupObservers() {
-        newReportViewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
+        reportFormViewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
             binding.publishButton.isEnabled = !isLoading
             binding.publishButton.text = when {
                 isLoading && editingPost != null -> getString(R.string.saving)
@@ -154,14 +157,14 @@ class NewReportDialog : DialogFragment() {
             lastUpdated = editingPost?.lastUpdated
         )
 
-        val imageBytes = selectedImageUri?.let { getCompressedImageBytes(it) }
+        val imageBytes = selectedImageUri?.let { ImageHelper.getCompressedImageBytes(requireContext(), it) }
 
         if (editingPost != null) {
-            newReportViewModel.updatePost(post, imageBytes) { success ->
+            reportFormViewModel.updatePost(post, imageBytes) { success ->
                 if (success) handleSuccess(R.string.report_updated) else handleError()
             }
         } else {
-            newReportViewModel.addPost(post, imageBytes) { success ->
+            reportFormViewModel.addPost(post, imageBytes) { success ->
                 if (success) handleSuccess(R.string.report_published) else handleError()
             }
         }
@@ -203,24 +206,6 @@ class NewReportDialog : DialogFragment() {
         val photoFile = File(requireContext().cacheDir, "camera_image_${System.currentTimeMillis()}.jpg")
         tempCameraUri = androidx.core.content.FileProvider.getUriForFile(requireContext(), "${requireContext().packageName}.fileprovider", photoFile)
         takePicture.launch(tempCameraUri)
-    }
-
-    private fun showDateTimePicker() {
-        val datePicker = MaterialDatePicker.Builder.datePicker().setTitleText(getString(R.string.select_date)).build()
-        datePicker.addOnPositiveButtonClickListener { dateSelection ->
-            val timePicker = MaterialTimePicker.Builder().setTimeFormat(TimeFormat.CLOCK_12H).setTitleText(getString(R.string.select_time)).build()
-            timePicker.addOnPositiveButtonClickListener {
-                val calendar = Calendar.getInstance().apply {
-                    timeInMillis = dateSelection
-                    set(Calendar.HOUR_OF_DAY, timePicker.hour)
-                    set(Calendar.MINUTE, timePicker.minute)
-                }
-                val format = SimpleDateFormat(getString(R.string.date_format_with_at), Locale.getDefault())
-                binding.dateTime.setText(format.format(calendar.time))
-            }
-            timePicker.show(parentFragmentManager, "TimePicker")
-        }
-        datePicker.show(parentFragmentManager, "DatePicker")
     }
 
     private fun updateToggleColors(checkedId: Int) {
@@ -284,19 +269,5 @@ class NewReportDialog : DialogFragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
-    }
-
-    private fun getCompressedImageBytes(uri: android.net.Uri): ByteArray? {
-        return try {
-            requireContext().contentResolver.openInputStream(uri)?.use { inputStream ->
-                val originalBitmap = android.graphics.BitmapFactory.decodeStream(inputStream)
-                java.io.ByteArrayOutputStream().use { outputStream ->
-                    originalBitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 70, outputStream)
-                    outputStream.toByteArray()
-                }
-            }
-        } catch (e: Exception) {
-            null
-        }
     }
 }

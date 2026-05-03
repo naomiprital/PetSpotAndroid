@@ -19,7 +19,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.petspotandroid.R
 import com.example.petspotandroid.databinding.FragmentPostsListBinding
 import com.example.petspotandroid.features.post_details.PostDetailsDialog
-import com.example.petspotandroid.features.new_report.NewReportDialog
+import com.example.petspotandroid.features.report_form.ReportFormDialog
 
 class PostsListFragment : Fragment() {
 
@@ -78,8 +78,8 @@ class PostsListFragment : Fragment() {
 
     private fun setupFab() {
         binding.addPostFab.setOnClickListener {
-            NewReportDialog.newInstance()
-                .show(parentFragmentManager, "NewReportDialog")
+            ReportFormDialog.newInstance()
+                .show(parentFragmentManager, "ReportFormDialog")
         }
     }
 

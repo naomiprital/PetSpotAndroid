@@ -11,6 +11,7 @@ import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.example.petspotandroid.R
 import com.example.petspotandroid.databinding.FragmentLoginBinding
+import com.example.petspotandroid.features.authentication.auth.AuthFragmentDirections
 import com.example.petspotandroid.features.authentication.auth.AuthViewModel
 
 class LoginFragment : Fragment() {
@@ -47,7 +48,8 @@ class LoginFragment : Fragment() {
         }
 
         binding.tvForgotPassword.setOnClickListener {
-            findNavController().navigate(R.id.action_authFragment_to_forgotPasswordFragment)
+            val action = AuthFragmentDirections.actionAuthFragmentToForgotPasswordFragment()
+            findNavController().navigate(action)
         }
     }
 

@@ -16,24 +16,29 @@ class AuthInterceptor : Interceptor {
     }
 }
 
-object NetworkClient {
-    private const val BASE_URL = "https://some-random-api.com/"
+class NetworkClient private constructor() {
 
-    private val okHttpClient: OkHttpClient by lazy {
-        OkHttpClient.Builder()
-            .addInterceptor(AuthInterceptor())
-            .build()
-    }
+    companion object {
+        private const val BASE_URL = "https://some-random-api.com/"
 
-    private val retrofit: Retrofit by lazy {
-        Retrofit.Builder()
-            .baseUrl(BASE_URL)
-            .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-    }
+        val instance = NetworkClient()
 
-    val animalFactApi: AnimalFactApi by lazy {
-        retrofit.create(AnimalFactApi::class.java)
+        private val okHttpClient: OkHttpClient by lazy {
+            OkHttpClient.Builder()
+                .addInterceptor(AuthInterceptor())
+                .build()
+        }
+
+        private val retrofit: Retrofit by lazy {
+            Retrofit.Builder()
+                .baseUrl(BASE_URL)
+                .client(okHttpClient)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
+        }
+
+        val animalFactApi: AnimalFactApi by lazy {
+            retrofit.create(AnimalFactApi::class.java)
+        }
     }
 }
