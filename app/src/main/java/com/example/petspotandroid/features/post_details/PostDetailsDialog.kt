@@ -134,7 +134,7 @@ class PostDetailsDialog : DialogFragment() {
 
     private fun handleNewComment() {
         val text = binding.commentEditText.text.toString().trim()
-        val user = currentUserProfile // Use the observed value
+        val user = currentUserProfile
         val userId = authViewModel.user.value?.uid
         val post = currentPost
 
