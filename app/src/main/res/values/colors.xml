@@ -1,5 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <color name="petspot_orange">#f97316</color>
+    <color name="petspot_orange_light">#fff5e6</color>
+    <color name="filters_background">#f5f6f8</color>
+    <color name="app_background">#e6eaf0</color>
+    <color name="light_gray">#C2CAD0</color>
+    <color name="gray_text">#a0aab2</color>
+    <color name="selected">#3b7eeb</color>
+
+    <color name="status_lost">#f44336</color>
+    <color name="status_found">#4caf50</color>
+    <color name="status_lost_text">#F5222D</color>
+    <color name="status_found_text">#52C41A</color>
+    <color name="status_lost_bg">#FFF1F0</color>
+    <color name="status_found_bg">#F6FFED</color>
+
+    <color name="app_slogan">#757575</color>
+    <color name="auth_background">#f5f6f8</color>
+    <color name="auth_form_background">#fafafa</color>
+    <color name="toolbar_profile_border">#E0E0E0</color>
+    <color name="profile_dropdown_name">#212121</color>
+    <color name="divider">#EEEEEE</color>
+    <color name="navigate_button">#546E7A</color>
+    <color name="logout">#E53935</color>
+    <color name="reunions">#43A047</color>
+    <color name="list_counter">#FFE0B2</color>
+    <color name="launcher_background">#3DDC84</color>
+    <color name="launcher_line">#33FFFFFF</color>
+    <color name="comment_gray">#F5F6F8</color>
+    <color name="edit_mode_image_background">#66000000</color>
+    <color name="edit_profile_button">#455A64</color>
+    <color name="cancel_edit_profile_button">#ECEFF1</color>
+
+    <color name="resolved_bg">#F0F2F5</color>
+    <color name="resolved_text">#595959</color>
+    <color name="resolved_stroke">#D9D9D9</color>
+    <color name="unresolved_text">#008060</color>
+    <color name="unresolved_stroke">#B7EB8F</color>
+
+    <color name="card_stroke">#F0F0F0</color>
+    <color name="resolved_badge_bg">#10b981</color>
+    <color name="icon_gray_secondary">#8C8C8C</color>
+    <color name="text_primary">#262626</color>
+    <color name="edit_btn_bg">#F8F9FA</color>
+    <color name="edit_btn_text">#434343</color>
+    <color name="resolve_btn_bg_green">#D1FAE5</color>
+    <color name="resolve_btn_text_green">#059669</color>
+
 </resources>

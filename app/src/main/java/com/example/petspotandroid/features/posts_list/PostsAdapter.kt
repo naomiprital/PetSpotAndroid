@@ -1,0 +1,106 @@
+package com.example.petspotandroid.features.posts_list
+
+import android.annotation.SuppressLint
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.TextView
+import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.RecyclerView
+import com.example.petspotandroid.R
+import com.example.petspotandroid.model.Post
+import com.squareup.picasso.Picasso
+
+class PostsAdapter(
+    private var posts: List<Post>,
+    private val onPostClicked: (Post) -> Unit
+) : RecyclerView.Adapter<PostsAdapter.PostViewHolder>() {
+
+    @SuppressLint("NotifyDataSetChanged")
+    fun setPosts(newPosts: List<Post>) {
+        this.posts = newPosts
+        notifyDataSetChanged()
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PostViewHolder {
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.post_item, parent, false)
+        return PostViewHolder(view)
+    }
+
+    override fun onBindViewHolder(holder: PostViewHolder, position: Int) {
+        val post = posts[position]
+        holder.bind(post)
+
+        holder.itemView.setOnClickListener {
+            onPostClicked(post)
+        }
+    }
+
+    override fun getItemCount(): Int = posts.size
+
+    class PostViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val imageView: ImageView = itemView.findViewById(R.id.post_image)
+        private val statusView: TextView = itemView.findViewById(R.id.post_status)
+        private val typeView: TextView = itemView.findViewById(R.id.post_pet_type)
+        private val locationView: TextView = itemView.findViewById(R.id.post_location)
+        private val dateView: TextView = itemView.findViewById(R.id.post_date)
+        private val descriptionView: TextView = itemView.findViewById(R.id.post_description)
+        private val profileImageView: ImageView = itemView.findViewById(R.id.post_user_avatar )
+        private val commentCountView: TextView = itemView.findViewById(R.id.post_comment_count)
+
+        @SuppressLint("SetTextI18n")
+        fun bind(post: Post) {
+            locationView.text = post.lastSeenLocation
+            descriptionView.text = post.description
+            typeView.text = post.petType
+            dateView.text = post.eventDate
+
+            val context = itemView.context
+
+            val badgeTextId = if (post.isLost) R.string.lost else R.string.found
+            val badgeColorId = if (post.isLost) R.color.status_lost else R.color.status_found
+
+            statusView.text = ContextCompat.getString(context, badgeTextId)
+            statusView.setBackgroundResource(R.drawable.bg_badge)
+            statusView.background.mutate().setTint(ContextCompat.getColor(context, badgeColorId))
+
+            if (!post.imageUrl.isNullOrEmpty()) {
+                Picasso.get()
+                    .load(post.imageUrl)
+                    .fit()
+                    .centerCrop()
+                    .placeholder(android.R.drawable.ic_menu_camera)
+                    .error(android.R.drawable.ic_menu_camera)
+                    .into(imageView)
+            } else {
+                imageView.setImageResource(android.R.drawable.ic_menu_camera)
+            }
+
+            if (!post.authorProfileImageUrl.isNullOrEmpty()) {
+                Picasso.get()
+                    .load(post.authorProfileImageUrl)
+                    .placeholder(R.drawable.ic_person)
+                    .error(R.drawable.ic_person)
+                    .fit()
+                    .centerCrop()
+                    .into(profileImageView)
+            } else {
+                profileImageView.setImageResource(R.drawable.ic_person)
+            }
+
+            when (val count = post.comments.size) {
+                0 -> {
+                    commentCountView.text = "No comments yet"
+                }
+                1 -> {
+                    commentCountView.text = "1 comment"
+                }
+                else -> {
+                    commentCountView.text = "$count comments"
+                }
+            }
+        }
+    }
+}
