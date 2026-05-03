@@ -31,7 +31,4 @@ interface PostDao {
 
     @Delete
     fun delete(post: Post)
-
-    @Query("UPDATE posts SET userName = :newName, authorProfileImageUrl = :newAvatarUrl WHERE authorId = :authorId")
-    fun updateAuthorMetadata(authorId: String, newName: String, newAvatarUrl: String?)
 }
