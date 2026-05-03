@@ -118,12 +118,10 @@ class PostRepository private constructor() {
     }
 
     fun addComment(post: Post, comment: Comment, callback: (Boolean) -> Unit) {
-        // 1. Create a copy of the post with the new comment added to the list
         val updatedComments = post.comments.toMutableList()
         updatedComments.add(comment)
         val updatedPost = post.copy(comments = updatedComments)
 
-        // 2. Use the existing updatePost logic to sync everything
         updatePost(updatedPost, null,
             onSuccess = { callback(true) },
             onError = { callback(false) }

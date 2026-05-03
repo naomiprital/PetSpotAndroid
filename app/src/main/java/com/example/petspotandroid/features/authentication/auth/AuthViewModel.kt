@@ -44,7 +44,6 @@ class AuthViewModel : ViewModel() {
     fun checkCurrentUser() {
         val currentUser = repository.getCurrentUser()
         if (currentUser != null && _user.value?.uid != currentUser.uid) {
-            // This update triggers the switchMap(userData) pipeline
             _user.value = currentUser
         }
     }

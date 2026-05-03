@@ -138,8 +138,6 @@ class PostDetailsDialog : DialogFragment() {
         val userId = authViewModel.user.value?.uid
         val post = currentPost
 
-        // If this hits return, the button does nothing.
-        // Added a toast so you know why it's failing!
         if (text.isEmpty() || user == null || userId == null || post == null) {
             if (user == null) Toast.makeText(requireContext(), "Loading user profile...", Toast.LENGTH_SHORT).show()
             return

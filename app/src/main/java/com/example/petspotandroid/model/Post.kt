@@ -88,7 +88,6 @@ data class Post(
             val timestamp = json[LAST_UPDATED_KEY] as? Timestamp
             val lastUpdatedLong = timestamp?.toDate()?.time
 
-            // FIX: Manually map the comments list from the JSON array
             val commentsJson = json[COMMENTS_KEY] as? List<Map<String, Any?>> ?: emptyList()
             val commentsList = commentsJson.map { Comment.fromJson(it) }
 
@@ -112,7 +111,7 @@ data class Post(
         }
     }
 
-    @get:Exclude // Stops double-mapping corruption
+    @get:Exclude
     val toJson: Map<String, Any?>
         get() = hashMapOf(
             ID_KEY to id,
@@ -128,7 +127,7 @@ data class Post(
             LOCATION_KEY to lastSeenLocation,
             CONTACT_KEY to contactNumber,
             EVENT_DATE_KEY to eventDate,
-            COMMENTS_KEY to comments.map { it.toJson }, // Saves comments to Firebase
+            COMMENTS_KEY to comments.map { it.toJson },
             LAST_UPDATED_KEY to FieldValue.serverTimestamp()
         )
 }
