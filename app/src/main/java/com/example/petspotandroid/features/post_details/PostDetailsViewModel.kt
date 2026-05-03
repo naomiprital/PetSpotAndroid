@@ -14,13 +14,9 @@ class PostDetailsViewModel : ViewModel() {
         return repository.getPostById(postId)
     }
 
-    fun addComment(post: Post, comment: Comment, onResult: (Boolean) -> Unit) {
-        val updatedComments = post.comments.toMutableList().apply { add(comment) }
-        val updatedPost = post.copy(comments = updatedComments)
-
-        repository.updatePost(updatedPost, null,
-            onSuccess = { onResult(true) },
-            onError = { onResult(false) }
-        )
+    fun addComment(post: Post, comment: Comment, onComplete: (Boolean) -> Unit) {
+        repository.addComment(post, comment) { success ->
+            onComplete(success)
+        }
     }
 }

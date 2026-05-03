@@ -18,6 +18,7 @@ import com.example.petspotandroid.features.comments.CommentsAdapter
 import com.example.petspotandroid.features.user_info.UserProfileDialog
 import com.example.petspotandroid.model.Comment
 import com.example.petspotandroid.model.Post
+import com.example.petspotandroid.model.User
 import com.squareup.picasso.Picasso
 import java.text.SimpleDateFormat
 import java.util.*
@@ -32,6 +33,7 @@ class PostDetailsDialog : DialogFragment() {
 
     private var commentsAdapter: CommentsAdapter? = null
     private var currentPost: Post? = null
+    private var currentUserProfile: User? = null
 
     companion object {
         private const val ARG_POST_ID = "arg_post_id"
@@ -50,6 +52,13 @@ class PostDetailsDialog : DialogFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        authViewModel.userData.observe(viewLifecycleOwner) { user ->
+            this.currentUserProfile = user
+        }
+
+        val currentUid = authViewModel.user.value?.uid
+        currentUid?.let { authViewModel.refreshUserData() }
 
         val postId = arguments?.getString(ARG_POST_ID) ?: return dismiss()
 
@@ -125,11 +134,16 @@ class PostDetailsDialog : DialogFragment() {
 
     private fun handleNewComment() {
         val text = binding.commentEditText.text.toString().trim()
-        val user = authViewModel.userData.value
+        val user = currentUserProfile // Use the observed value
         val userId = authViewModel.user.value?.uid
         val post = currentPost
 
-        if (text.isEmpty() || user == null || userId == null || post == null) return
+        // If this hits return, the button does nothing.
+        // Added a toast so you know why it's failing!
+        if (text.isEmpty() || user == null || userId == null || post == null) {
+            if (user == null) Toast.makeText(requireContext(), "Loading user profile...", Toast.LENGTH_SHORT).show()
+            return
+        }
 
         val comment = Comment(
             id = UUID.randomUUID().toString(),

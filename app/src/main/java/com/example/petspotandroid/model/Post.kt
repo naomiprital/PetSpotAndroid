@@ -1,47 +1,71 @@
 package com.example.petspotandroid.model
 
 import android.content.Context
+import androidx.core.content.edit
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.example.petspotandroid.base.MyApplication
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.Exclude
 import com.google.firebase.firestore.FieldValue
-import androidx.core.content.edit
+import com.google.firebase.firestore.PropertyName
 
 @Entity(tableName = "posts")
 data class Post(
     @PrimaryKey
-    val id: String,
-    val authorId: String,
-    val userName: String,
-    val authorProfileImageUrl: String?,
-    val description: String,
-    val imageUrl: String?,
-    val createdAt: Long,
-    val isLost: Boolean,
-    val isResolved: Boolean,
-    val petType: String,
-    val lastSeenLocation: String,
-    val contactNumber: String,
-    val eventDate: String,
+    @get:PropertyName(ID_KEY) @set:PropertyName(ID_KEY)
+    var id: String = "",
+
+    @get:PropertyName(AUTHOR_ID_KEY) @set:PropertyName(AUTHOR_ID_KEY)
+    var authorId: String = "",
+
+    @get:PropertyName(USER_NAME_KEY) @set:PropertyName(USER_NAME_KEY)
+    var userName: String = "",
+
+    @get:PropertyName(AUTHOR_IMAGE_KEY) @set:PropertyName(AUTHOR_IMAGE_KEY)
+    var authorProfileImageUrl: String? = null,
+
+    @get:PropertyName(DESCRIPTION_KEY) @set:PropertyName(DESCRIPTION_KEY)
+    var description: String = "",
+
+    @get:PropertyName(IMAGE_URL_KEY) @set:PropertyName(IMAGE_URL_KEY)
+    var imageUrl: String? = null,
+
+    @get:PropertyName(CREATED_AT_KEY) @set:PropertyName(CREATED_AT_KEY)
+    var createdAt: Long = 0L,
+
+    @get:PropertyName(IS_LOST_KEY) @set:PropertyName(IS_LOST_KEY)
+    var isLost: Boolean = true,
+
+    @get:PropertyName(IS_RESOLVED_KEY) @set:PropertyName(IS_RESOLVED_KEY)
+    var isResolved: Boolean = false,
+
+    @get:PropertyName(PET_TYPE_KEY) @set:PropertyName(PET_TYPE_KEY)
+    var petType: String = "",
+
+    @get:PropertyName(LOCATION_KEY) @set:PropertyName(LOCATION_KEY)
+    var lastSeenLocation: String = "",
+
+    @get:PropertyName(CONTACT_KEY) @set:PropertyName(CONTACT_KEY)
+    var contactNumber: String = "",
+
+    @get:PropertyName(EVENT_DATE_KEY) @set:PropertyName(EVENT_DATE_KEY)
+    var eventDate: String = "",
+
     var comments: List<Comment> = emptyList(),
-    val lastUpdated: Long?
 
+    @get:PropertyName(LAST_UPDATED_KEY) @set:PropertyName(LAST_UPDATED_KEY)
+    var lastUpdated: Long? = null
 ) {
-
     companion object {
         var lastUpdated: Long
-            get() {
-                return MyApplication.Globals.appContext
-                    ?.getSharedPreferences("POSTS_PREFS", Context.MODE_PRIVATE)
-                    ?.getLong(LAST_UPDATED_KEY, 0) ?: 0
-            }
+            get() = MyApplication.Globals.appContext
+                ?.getSharedPreferences("POSTS_PREFS", Context.MODE_PRIVATE)
+                ?.getLong(LAST_UPDATED_KEY, 0) ?: 0
             set(value) {
                 MyApplication.Globals.appContext
                     ?.getSharedPreferences("POSTS_PREFS", Context.MODE_PRIVATE)
-                    ?.edit {
-                        putLong(LAST_UPDATED_KEY, value)
-                    }
+                    ?.edit { putLong(LAST_UPDATED_KEY, value) }
             }
 
         const val ID_KEY = "id"
@@ -64,6 +88,10 @@ data class Post(
             val timestamp = json[LAST_UPDATED_KEY] as? Timestamp
             val lastUpdatedLong = timestamp?.toDate()?.time
 
+            // FIX: Manually map the comments list from the JSON array
+            val commentsJson = json[COMMENTS_KEY] as? List<Map<String, Any?>> ?: emptyList()
+            val commentsList = commentsJson.map { Comment.fromJson(it) }
+
             return Post(
                 id = json[ID_KEY] as? String ?: "",
                 authorId = json[AUTHOR_ID_KEY] as? String ?: "",
@@ -71,18 +99,20 @@ data class Post(
                 authorProfileImageUrl = json[AUTHOR_IMAGE_KEY] as? String,
                 description = json[DESCRIPTION_KEY] as? String ?: "",
                 imageUrl = json[IMAGE_URL_KEY] as? String,
-                createdAt = json[CREATED_AT_KEY] as? Long ?: 0L,
-                isLost = json[IS_LOST_KEY] as? Boolean ?: true,
-                isResolved = json[IS_RESOLVED_KEY] as? Boolean ?: false,
+                createdAt = (json[CREATED_AT_KEY] as? Long) ?: 0L,
+                isLost = (json[IS_LOST_KEY] as? Boolean) ?: (json["lost"] as? Boolean) ?: true,
+                isResolved = (json[IS_RESOLVED_KEY] as? Boolean) ?: (json["resolved"] as? Boolean) ?: false,
                 petType = json[PET_TYPE_KEY] as? String ?: "",
                 lastSeenLocation = json[LOCATION_KEY] as? String ?: "",
                 contactNumber = json[CONTACT_KEY] as? String ?: "",
                 eventDate = json[EVENT_DATE_KEY] as? String ?: "",
+                comments = commentsList,
                 lastUpdated = lastUpdatedLong
             )
         }
     }
 
+    @get:Exclude // Stops double-mapping corruption
     val toJson: Map<String, Any?>
         get() = hashMapOf(
             ID_KEY to id,
@@ -98,6 +128,7 @@ data class Post(
             LOCATION_KEY to lastSeenLocation,
             CONTACT_KEY to contactNumber,
             EVENT_DATE_KEY to eventDate,
+            COMMENTS_KEY to comments.map { it.toJson }, // Saves comments to Firebase
             LAST_UPDATED_KEY to FieldValue.serverTimestamp()
         )
 }
