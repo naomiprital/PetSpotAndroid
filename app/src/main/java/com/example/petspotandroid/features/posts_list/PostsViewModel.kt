@@ -1,26 +1,24 @@
 package com.example.petspotandroid.features.posts_list
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.map
-import androidx.lifecycle.viewModelScope
-import com.example.petspotandroid.R
-import com.example.petspotandroid.dao.AppLocalDb
-import com.example.petspotandroid.model.Post
+import androidx.lifecycle.ViewModel
 import com.example.petspotandroid.data.repository.fact.FactRepository
 import com.example.petspotandroid.data.repository.post.PostRepository
-import kotlinx.coroutines.launch
+import com.example.petspotandroid.model.Post
 
 enum class FilterType { ALL, LOST, FOUND }
 enum class SortOrder { NEWEST_FIRST, OLDEST_FIRST }
 
-class PostsViewModel(application: Application) : AndroidViewModel(application) {
-//    TODO: Break down to smaller view models !!
-    private val postDao = AppLocalDb.getDatabase(application).postDao()
-    private val repository = PostRepository(postDao)
+class PostsViewModel : ViewModel() {
+
+    private val repository = PostRepository.instance
+    private val factRepository = FactRepository.instance
+
+    private val filterTrigger = MutableLiveData<Unit>()
+
+    private var lastKnownPosts: List<Post> = emptyList()
 
     private val _filteredPosts = MediatorLiveData<List<Post>>()
     val filteredPosts: LiveData<List<Post>> get() = _filteredPosts
@@ -30,109 +28,87 @@ class PostsViewModel(application: Application) : AndroidViewModel(application) {
     private var currentSort = SortOrder.NEWEST_FIRST
     private var currentSearchQuery = ""
 
-    private val factRepository = FactRepository()
     private val _dailyFact = MutableLiveData<String?>()
     val dailyFact: LiveData<String?> = _dailyFact
 
     init {
         refreshPosts()
 
-        _filteredPosts.addSource(repository.allPosts) { posts ->
-            applyFilters(posts)
+        _filteredPosts.addSource(repository.getAllPosts()) { posts ->
+            lastKnownPosts = posts ?: emptyList()
+            _filteredPosts.value = applyFilters(lastKnownPosts)
+        }
+
+        _filteredPosts.addSource(filterTrigger) {
+            _filteredPosts.value = applyFilters(lastKnownPosts)
         }
     }
 
     fun refreshPosts() {
-        viewModelScope.launch {
-            repository.refreshPosts()
-        }
-    }
-
-    fun addPost(post: Post, onResult: (Boolean, Int) -> Unit = { _, _ -> }) {
-        viewModelScope.launch {
-            val result = repository.addPost(post)
-            if (result.isSuccess) {
-                onResult(true, R.string.report_published)
-            } else {
-                onResult(false, R.string.failed_to_publish)
-            }
-        }
-    }
-
-    fun updatePost(post: Post, onResult: (Boolean, Int) -> Unit = { _, _ -> }) {
-        viewModelScope.launch {
-            val result = repository.updatePost(post)
-            if (result.isSuccess) {
-                onResult(true, R.string.report_updated)
-            } else {
-                onResult(false, R.string.failed_to_update)
-            }
-        }
-    }
-
-    fun deletePost(post: Post, onResult: (Boolean, Int) -> Unit = { _, _ -> }) {
-        viewModelScope.launch {
-            val result = repository.deletePost(post)
-            if (result.isSuccess) {
-                onResult(true, R.string.report_deleted)
-            } else {
-                onResult(false, R.string.failed_to_delete)
-            }
-        }
-    }
-
-    fun getMyPosts(userId: String): LiveData<List<Post>> {
-        return repository.allPosts.map { posts ->
-            posts.filter { it.authorId == userId }
-        }
+        repository.refreshPosts()
     }
 
     fun updateFilters(type: FilterType, animal: String?, sort: SortOrder) {
         currentType = type
         currentAnimal = animal
         currentSort = sort
-        applyFilters(repository.allPosts.value)
+        filterTrigger.value = Unit
     }
 
     fun updateSearchQuery(query: String) {
         currentSearchQuery = query
-        applyFilters(repository.allPosts.value)
+        filterTrigger.value = Unit
     }
 
-    private fun applyFilters(posts: List<Post>?) {
-        var result = posts ?: emptyList()
+    private fun applyFilters(posts: List<Post>): List<Post> {
+        return posts.filter { post ->
+            val matchesSearch = currentSearchQuery.isBlank() ||
+                    post.description.contains(currentSearchQuery, ignoreCase = true) ||
+                    post.lastSeenLocation.contains(currentSearchQuery, ignoreCase = true)
 
-        if (currentSearchQuery.isNotBlank()) {
-            result = result.filter {
-                it.description.contains(currentSearchQuery, ignoreCase = true) ||
-                        it.lastSeenLocation.contains(currentSearchQuery, ignoreCase = true)
+            val matchesType = currentType == FilterType.ALL ||
+                    post.isLost == (currentType == FilterType.LOST)
+
+            val matchesAnimal = currentAnimal == null ||
+                    post.petType.trim().equals(currentAnimal?.trim(), ignoreCase = true)
+
+            matchesSearch && matchesType && matchesAnimal
+        }.let { filtered ->
+            if (currentSort == SortOrder.OLDEST_FIRST) {
+                filtered.sortedBy { it.createdAt }
+            } else {
+                filtered.sortedByDescending { it.createdAt }
             }
         }
-
-        if (currentType != FilterType.ALL) {
-            val lookingForLost = currentType == FilterType.LOST
-            result = result.filter { it.isLost == lookingForLost }
-        }
-
-        if (currentAnimal != null) {
-            result = result.filter { it.petType.equals(currentAnimal, ignoreCase = true) }
-        }
-
-        result = if (currentSort == SortOrder.OLDEST_FIRST) {
-            result.sortedBy { it.createdAt }
-        } else {
-            result.sortedByDescending { it.createdAt }
-        }
-
-        _filteredPosts.value = result
     }
 
-
-
     fun loadDailyFact(supportedAnimals: List<String>) {
-        viewModelScope.launch {
-            val fact = factRepository.getDailyFact(supportedAnimals)
-            _dailyFact.postValue(fact)
+        factRepository.getDailyFact(supportedAnimals) { fact ->
+            _dailyFact.value = fact
         }
+    }
+
+    fun updatePost(post: Post, imageBytes: ByteArray? = null, onResult: (Boolean) -> Unit) {
+        repository.updatePost(
+            post = post,
+            imageBytes = imageBytes,
+            onSuccess = {
+                onResult(true)
+            },
+            onError = { errorMessage ->
+                onResult(false)
+            }
+        )
+    }
+
+    fun deletePost(post: Post, onResult: (Boolean, String?) -> Unit) {
+        repository.deletePost(post,
+            onSuccess = { onResult(true, null) },
+            onError = { error -> onResult(false, error) }
+        )
+    }
+
+    fun getMyPosts(userId: String): LiveData<List<Post>> {
+        return repository.getPostByAuthorId(userId)
     }
 }

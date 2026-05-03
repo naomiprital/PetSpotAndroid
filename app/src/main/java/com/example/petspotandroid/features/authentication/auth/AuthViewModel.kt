@@ -3,22 +3,30 @@ package com.example.petspotandroid.features.authentication.auth
 import android.graphics.Bitmap
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.switchMap
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.example.petspotandroid.data.repository.auth.AuthRepository
 import com.example.petspotandroid.model.User
 import com.google.firebase.auth.FirebaseUser
-import kotlinx.coroutines.launch
 
-class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
+class AuthViewModel : ViewModel() {
+
+    private val repository = AuthRepository.instance
+
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
 
     private val _user = MutableLiveData<FirebaseUser?>()
     val user: LiveData<FirebaseUser?> = _user
 
-    private val _userData = MutableLiveData<User?>()
-    val userData: LiveData<User?> = _userData
+    val userData: LiveData<User?> = _user.switchMap { firebaseUser ->
+        if (firebaseUser != null) {
+            repository.refreshUserData(firebaseUser.uid)
+            repository.getUserLiveData(firebaseUser.uid)
+        } else {
+            MutableLiveData(null)
+        }
+    }
 
     private val _errorMessage = MutableLiveData<String?>()
     val errorMessage: LiveData<String?> = _errorMessage
@@ -35,32 +43,16 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
 
     fun checkCurrentUser() {
         val currentUser = repository.getCurrentUser()
-        if (_user.value?.uid != currentUser?.uid) {
+        if (currentUser != null && _user.value?.uid != currentUser.uid) {
             _user.value = currentUser
-        }
-
-        if (currentUser != null) {
-            loadUserData(currentUser.uid)
-        } else {
-            _userData.value = null
         }
     }
 
     fun refreshUserData() {
         val currentUser = repository.getCurrentUser()
         if (currentUser != null) {
-            loadUserData(currentUser.uid)
-        }
-    }
-
-    private fun loadUserData(userId: String) {
-        viewModelScope.launch {
-            val result = repository.getUserData(userId)
-            result.onSuccess { user ->
-                if (_userData.value != user) {
-                    _userData.value = user
-                }
-            }
+            _user.value = currentUser
+            repository.refreshUserData(currentUser.uid)
         }
     }
 
@@ -72,48 +64,37 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
 
         _isLoading.value = true
 
-        viewModelScope.launch {
-            val result = repository.login(email, password)
-            _isLoading.value = false
+        repository.login(email, password) { result ->
+            _isLoading.postValue(false)
 
             result.onSuccess { firebaseUser ->
-                _user.value = firebaseUser
-                loadUserData(firebaseUser.uid)
+                _user.postValue(firebaseUser)
             }.onFailure { exception ->
-                _errorMessage.value = exception.message ?: "Login failed"
+                _errorMessage.postValue(exception.message ?: "Login failed")
             }
         }
     }
 
     fun register(
-        email: String,
+        user: User,
         password: String,
-        firstName: String,
-        lastName: String,
-        phone: String,
         image: Bitmap? = null
     ) {
-        if (email.isBlank() || password.isBlank() || firstName.isBlank() || lastName.isBlank() || phone.isBlank()) {
+        if (user.email.isBlank() || password.isBlank() || user.firstName.isBlank() ||
+            user.lastName.isBlank() || user.phone.isBlank()) {
             _errorMessage.value = "Please fill in all fields"
             return
         }
 
         _isLoading.value = true
-        viewModelScope.launch {
-            val userProfile = User(
-                firstName = firstName,
-                lastName = lastName,
-                email = email,
-                phone = phone
-            )
-            val result = repository.register(userProfile, password, image)
-            _isLoading.value = false
+
+        repository.register(user, password, image) { result ->
+            _isLoading.postValue(false)
 
             result.onSuccess { firebaseUser ->
-                _user.value = firebaseUser
-                loadUserData(firebaseUser.uid)
+                _user.postValue(firebaseUser)
             }.onFailure { exception ->
-                _errorMessage.value = exception.message ?: "Registration failed"
+                _errorMessage.postValue(exception.message ?: "Registration failed")
             }
         }
     }
@@ -125,15 +106,14 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
         }
 
         _isLoading.value = true
-        viewModelScope.launch {
-            val result = repository.updateUserProfile(firstName, lastName, phone, image)
-            _isLoading.value = false
 
-            result.onSuccess { updatedUser ->
-                _userData.value = updatedUser
-                _updateProfileSuccess.value = true
+        repository.updateUserProfile(firstName, lastName, phone, image) { result ->
+            _isLoading.postValue(false)
+
+            result.onSuccess {
+                _updateProfileSuccess.postValue(true)
             }.onFailure { exception ->
-                _errorMessage.value = exception.message ?: "Update failed"
+                _errorMessage.postValue(exception.message ?: "Update failed")
             }
         }
     }
@@ -146,7 +126,6 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
     fun logout() {
         repository.logout()
         _user.value = null
-        _userData.value = null
         _resetPasswordSuccess.value = false
     }
 
@@ -158,28 +137,27 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
         _isLoading.value = true
         _errorMessage.value = null
 
-        viewModelScope.launch {
-            val checkResult = repository.checkEmailExists(email)
-
+        repository.checkEmailExists(email) { checkResult ->
             if (checkResult.isSuccess) {
                 val emailExists = checkResult.getOrNull() == true
 
                 if (emailExists) {
-                    val resetResult = repository.resetPassword(email)
-
-                    if (resetResult.isSuccess) {
-                        _resetPasswordSuccess.postValue(true)
-                    } else {
-                        _errorMessage.postValue("Failed to send reset link: ${resetResult.exceptionOrNull()?.message}")
+                    repository.resetPassword(email) { resetResult ->
+                        _isLoading.postValue(false)
+                        if (resetResult.isSuccess) {
+                            _resetPasswordSuccess.postValue(true)
+                        } else {
+                            _errorMessage.postValue("Failed to send reset link: ${resetResult.exceptionOrNull()?.message}")
+                        }
                     }
                 } else {
+                    _isLoading.postValue(false)
                     _errorMessage.postValue("No account found with this email address.")
                 }
             } else {
+                _isLoading.postValue(false)
                 _errorMessage.postValue("Error checking account: ${checkResult.exceptionOrNull()?.message}")
             }
-
-            _isLoading.value = false
         }
     }
 }

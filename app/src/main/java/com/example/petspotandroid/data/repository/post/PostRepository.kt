@@ -1,107 +1,130 @@
 package com.example.petspotandroid.data.repository.post
 
+import android.os.Looper
+import androidx.core.os.HandlerCompat
 import androidx.lifecycle.LiveData
-import com.example.petspotandroid.dao.PostDao
+import com.example.petspotandroid.dao.AppLocalDB
+import com.example.petspotandroid.data.models.FirebaseModel
+import com.example.petspotandroid.data.models.StorageModel
+import com.example.petspotandroid.model.Comment
 import com.example.petspotandroid.model.Post
-import com.google.firebase.firestore.DocumentChange
-import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
-import kotlinx.coroutines.withContext
+import java.util.concurrent.Executors
 
-class PostRepository(private val postDao: PostDao) {
+class PostRepository private constructor() {
 
-    private val db = FirebaseFirestore.getInstance()
-    private val postsCollection = db.collection("posts")
-
-    val allPosts: LiveData<List<Post>> = postDao.getAllPosts()
-
-    init {
-        listenForPosts()
+    companion object {
+        val instance = PostRepository()
     }
-    private fun listenForPosts() {
-        postsCollection.addSnapshotListener { snapshot, error ->
-            if (error != null) return@addSnapshotListener
 
-            if (snapshot != null) {
-                CoroutineScope(Dispatchers.IO).launch {
-                    for (dc in snapshot.documentChanges) {
-                        val post = dc.document.toObject(Post::class.java)
+    private val firebaseModel = FirebaseModel()
+    private val storageModel = StorageModel()
 
-                        when (dc.type) {
-                            DocumentChange.Type.ADDED -> {
-                                postDao.insertPosts(listOf(post))
-                            }
-                            DocumentChange.Type.MODIFIED -> {
-                                postDao.insertPosts(listOf(post))
-                            }
-                            DocumentChange.Type.REMOVED -> {
-                                postDao.delete(post)
-                            }
+    private val executor = Executors.newFixedThreadPool(4)
+    private val mainHandler = HandlerCompat.createAsync(Looper.getMainLooper())
+
+    private val postDao = AppLocalDB.db.postDao
+
+    fun getAllPosts(): LiveData<List<Post>> {
+        return postDao.getAllPosts()
+    }
+
+    fun refreshPosts() {
+        val lastUpdated = Post.lastUpdated
+
+        firebaseModel.getAllPosts(lastUpdated) { posts ->
+            executor.execute {
+                var latestTimestamp = lastUpdated
+
+                for (post in posts) {
+                    postDao.insertPost(post)
+
+                    post.lastUpdated?.let {
+                        if (it > latestTimestamp) {
+                            latestTimestamp = it
                         }
                     }
                 }
+                Post.lastUpdated = latestTimestamp
             }
         }
     }
 
-    suspend fun refreshPosts(): Result<Boolean> {
-        return try {
-            val snapshot = postsCollection.get().await()
-            val remotePosts = snapshot.toObjects(Post::class.java)
-
-            withContext(Dispatchers.IO) {
-                postDao.deleteAll()
-                postDao.insertPosts(remotePosts)
+    fun addPost(post: Post, imageBytes: ByteArray?, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        executor.execute {
+            if (imageBytes != null) {
+                storageModel.uploadPostImage(imageBytes, post.id) { imageUrl ->
+                    if (imageUrl != null) {
+                        saveToFirebase(post.copy(imageUrl = imageUrl), onSuccess, onError, true)
+                    } else {
+                        mainHandler.post { onError("Image upload failed") }
+                    }
+                }
+            } else {
+                saveToFirebase(post, onSuccess, onError, true)
             }
-
-            Result.success(true)
-        } catch (e: Exception) {
-            Result.failure(e)
         }
     }
 
-    suspend fun addPost(post: Post): Result<Boolean> {
-        return try {
-            postsCollection.document(post.id).set(post).await()
-
-            withContext(Dispatchers.IO) {
-                postDao.insertPosts(listOf(post))
+    fun updatePost(post: Post, imageBytes: ByteArray?, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        executor.execute {
+            if (imageBytes != null) {
+                storageModel.uploadPostImage(imageBytes, post.id) { imageUrl ->
+                    if (imageUrl != null) {
+                        saveToFirebase(post.copy(imageUrl = imageUrl), onSuccess, onError, false)
+                    } else {
+                        mainHandler.post { onError("Image update failed") }
+                    }
+                }
+            } else {
+                saveToFirebase(post, onSuccess, onError, false)
             }
-
-            Result.success(true)
-        } catch (e: Exception) {
-            Result.failure(e)
         }
     }
 
-    suspend fun updatePost(post: Post): Result<Boolean> {
-        return try {
-            postsCollection.document(post.id).set(post).await()
+    private fun saveToFirebase(post: Post, onSuccess: () -> Unit, onError: (String) -> Unit, isNew: Boolean) {
+        val action = if (isNew) firebaseModel::addPost else firebaseModel::updatePost
 
-            withContext(Dispatchers.IO) {
-                postDao.insertPosts(listOf(post))
+        action(post) { success, error ->
+            if (success) {
+                executor.execute {
+                    postDao.insertPost(post)
+                    mainHandler.post { onSuccess() }
+                }
+            } else {
+                mainHandler.post { onError(error ?: "Operation failed") }
             }
-
-            Result.success(true)
-        } catch (e: Exception) {
-            Result.failure(e)
         }
     }
 
-    suspend fun deletePost(post: Post): Result<Boolean> {
-        return try {
-            postsCollection.document(post.id).delete().await()
-
-            withContext(Dispatchers.IO) {
-                postDao.delete(post)
+    fun deletePost(post: Post, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        firebaseModel.deletePost(post.id) { success, error ->
+            if (success) {
+                executor.execute {
+                    postDao.delete(post)
+                    mainHandler.post { onSuccess() }
+                }
+            } else {
+                mainHandler.post { onError(error ?: "Delete failed") }
             }
-
-            Result.success(true)
-        } catch (e: Exception) {
-            Result.failure(e)
         }
+    }
+
+    fun getPostById(postId: String): LiveData<Post> {
+        return postDao.getPostById(postId)
+    }
+
+    fun getPostByAuthorId(authorId: String): LiveData<List<Post>> {
+        return postDao.getPostsByUser(authorId)
+    }
+
+    fun addComment(post: Post, comment: Comment, callback: (Boolean) -> Unit) {
+        val updatedComments = post.comments.toMutableList()
+        updatedComments.add(comment)
+        val updatedPost = post.copy(comments = updatedComments)
+
+        updatePost(updatedPost, null,
+            onSuccess = { callback(true) },
+            onError = { callback(false) }
+        )
     }
 }

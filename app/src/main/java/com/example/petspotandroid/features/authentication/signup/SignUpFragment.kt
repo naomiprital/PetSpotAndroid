@@ -8,67 +8,73 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.activity.result.ActivityResultLauncher
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
+import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.example.petspotandroid.R
-import com.example.petspotandroid.base.ToastHelper
-import com.example.petspotandroid.dao.AppLocalDb
-import com.example.petspotandroid.data.repository.auth.AuthRepository
 import com.example.petspotandroid.databinding.FragmentSignUpBinding
 import com.example.petspotandroid.features.authentication.auth.AuthViewModel
+import com.example.petspotandroid.model.User
 
 class SignUpFragment : Fragment() {
-    private lateinit var viewModel: AuthViewModel
+
     private var _binding: FragmentSignUpBinding? = null
     private val binding get() = _binding!!
-    private var cameraLauncher: ActivityResultLauncher<Void?>? = null
-    private var galleryLauncher: ActivityResultLauncher<String>? = null
+
     private var isImageSelected = false
 
+    private val viewModel: AuthViewModel by viewModels()
+
     @SuppressLint("SetTextI18n")
+    private val cameraLauncher = registerForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
+        bitmap?.let {
+            binding.ivSelectedImage.setImageBitmap(it)
+            binding.tvUploadHint.text = "Photo selected"
+            binding.btnRemoveImage.visibility = View.VISIBLE
+            isImageSelected = true
+        }
+    }
+
+    @SuppressLint("SetTextI18n")
+    private val galleryLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let {
+            binding.ivSelectedImage.setImageURI(it)
+            binding.tvUploadHint.text = "Photo selected"
+            binding.btnRemoveImage.visibility = View.VISIBLE
+            isImageSelected = true
+        }
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentSignUpBinding.inflate(inflater, container, false)
+        return binding.root
+    }
 
-        cameraLauncher =
-            registerForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
-                bitmap?.let {
-                    binding.ivSelectedImage.setImageBitmap(it)
-                    binding.tvUploadHint.text = "Photo selected"
-                    binding.btnRemoveImage.visibility = View.VISIBLE
-                    isImageSelected = true
-                } ?: ToastHelper.showCustomToast(binding.root, "No image captured")
-            }
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
-        galleryLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-            uri?.let {
-                binding.ivSelectedImage.setImageURI(it)
-                binding.tvUploadHint.text = "Photo selected"
-                binding.btnRemoveImage.visibility = View.VISIBLE
-                isImageSelected = true
-            } ?: ToastHelper.showCustomToast(binding.root, "No image selected")
-        }
+        setupObservers()
+        setupListeners()
+    }
 
+    private fun setupListeners() {
         binding.btnUploadImage.setOnClickListener {
             val options = arrayOf("Take Photo", "Choose from Gallery", "Cancel")
-            val builder = AlertDialog.Builder(requireContext())
-            builder.setTitle("Choose your profile picture")
-
-            builder.setItems(options) { dialog, which ->
-                when (which) {
-                    0 -> cameraLauncher?.launch(null)
-                    1 -> galleryLauncher?.launch("image/*")
-                    2 -> dialog.dismiss()
+            AlertDialog.Builder(requireContext())
+                .setTitle("Choose your profile picture")
+                .setItems(options) { dialog, which ->
+                    when (which) {
+                        0 -> cameraLauncher.launch(null)
+                        1 -> galleryLauncher.launch("image/*")
+                        2 -> dialog.dismiss()
+                    }
                 }
-            }
-
-            builder.show()
+                .show()
         }
 
         binding.btnRemoveImage.setOnClickListener {
@@ -78,67 +84,60 @@ class SignUpFragment : Fragment() {
             isImageSelected = false
         }
 
-        return binding.root
+        binding.btnSignUp.setOnClickListener {
+            handleSignUp()
+        }
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
+    private fun handleSignUp() {
+        val firstName = binding.etFirstName.text.toString().trim()
+        val lastName = binding.etLastName.text.toString().trim()
+        val phone = binding.etPhone.text.toString().trim()
+        val email = binding.etEmail.text.toString().trim()
+        val password = binding.etPassword.text.toString().trim()
 
-        val repository = AuthRepository(
-            AppLocalDb.Companion.getDatabase(requireContext()).userDao(),
+        if (firstName.isEmpty() || lastName.isEmpty() || email.isEmpty() || password.isEmpty() || phone.isEmpty()) {
+            Toast.makeText(requireContext(), "Please fill all fields", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val newUser = User(
+            firstName = firstName,
+            lastName = lastName,
+            email = email,
+            phone = phone
         )
 
-        val factory = object : ViewModelProvider.Factory {
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                @Suppress("UNCHECKED_CAST")
-                return AuthViewModel(repository) as T
-            }
+        val imageBitmap: Bitmap? = if (isImageSelected) {
+            (binding.ivSelectedImage.drawable as? BitmapDrawable)?.bitmap
+        } else {
+            null
         }
 
-        viewModel = ViewModelProvider(requireActivity(), factory)[AuthViewModel::class.java]
+        viewModel.register(
+            user = newUser,
+            password = password,
+            image = imageBitmap
+        )
+    }
 
-        binding.btnSignUp.setOnClickListener {
-            val firstName = binding.etFirstName.text.toString().trim()
-            val lastName = binding.etLastName.text.toString().trim()
-            val phone = binding.etPhone.text.toString().trim()
-            val email = binding.etEmail.text.toString().trim()
-            val password = binding.etPassword.text.toString().trim()
-
-            if (firstName.isEmpty() || lastName.isEmpty() || email.isEmpty() || password.isEmpty() || phone.isEmpty()) {
-                ToastHelper.showCustomToast(view, "Please fill all fields")
-                return@setOnClickListener
-            }
-
-            val imageBitmap: Bitmap? = if (isImageSelected) {
-                (binding.ivSelectedImage.drawable as? BitmapDrawable)?.bitmap
-            } else {
-                null
-            }
-
-            viewModel.register(
-                email = email,
-                password = password,
-                firstName = firstName,
-                lastName = lastName,
-                phone = phone,
-                image = imageBitmap
-            )
-        }
-
+    private fun setupObservers() {
         viewModel.user.observe(viewLifecycleOwner) { firebaseUser ->
             if (firebaseUser != null) {
-                ToastHelper.showCustomToast(requireView(), "Registration Successful!")
-                val navController = parentFragment?.findNavController()
-                if (navController?.currentDestination?.id != R.id.postsListFragment) {
-                    navController?.navigate(R.id.action_global_postsListFragment)
-                }
+                Toast.makeText(requireContext(), "Registration Successful!", Toast.LENGTH_SHORT).show()
+                findNavController().navigate(R.id.action_global_postsListFragment)
             }
         }
 
         viewModel.errorMessage.observe(viewLifecycleOwner) { message ->
-            if (message != null) {
-                ToastHelper.showCustomToast(requireView(), message)
+            message?.let {
+                Toast.makeText(requireContext(), it, Toast.LENGTH_SHORT).show()
             }
+        }
+
+        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
+            binding.btnSignUp.isEnabled = !isLoading
+            binding.btnSignUp.text = if (isLoading) "Creating Account..." else "Sign Up"
         }
     }
 

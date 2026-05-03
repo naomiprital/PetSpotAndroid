@@ -1,145 +1,111 @@
 package com.example.petspotandroid.features.profile
 
 import android.annotation.SuppressLint
+import android.app.AlertDialog
 import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
-import android.widget.ImageView
-import android.widget.TextView
-import androidx.activity.result.ActivityResultLauncher
+import android.view.ViewGroup
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.example.petspotandroid.R
-import com.example.petspotandroid.features.profile.UserPostsAdapter
-import com.example.petspotandroid.base.ToastHelper
-import com.example.petspotandroid.dao.AppLocalDb
-import com.example.petspotandroid.data.repository.auth.AuthRepository
-import com.example.petspotandroid.features.post_details.PostDetailsDialog
-import com.example.petspotandroid.features.new_report.NewReportDialog
+import com.example.petspotandroid.databinding.FragmentProfileBinding
 import com.example.petspotandroid.features.authentication.auth.AuthViewModel
-import com.example.petspotandroid.features.authentication.auth.AuthViewModelFactory
+import com.example.petspotandroid.features.report_form.ReportFormDialog
+import com.example.petspotandroid.features.post_details.PostDetailsDialog
 import com.example.petspotandroid.features.posts_list.PostsViewModel
-import com.google.android.material.button.MaterialButton
-import com.google.android.material.textfield.TextInputEditText
-import com.google.android.material.textfield.TextInputLayout
 import com.squareup.picasso.Picasso
-import java.util.Calendar
+import java.util.*
 
-class ProfileFragment : Fragment(R.layout.fragment_profile) {
+class ProfileFragment : Fragment() {
 
-    private val authViewModel: AuthViewModel by activityViewModels {
-        val userDao = AppLocalDb.Companion.getDatabase(requireContext()).userDao()
-        val repository = AuthRepository(userDao)
-        AuthViewModelFactory(repository)
-    }
+    private var _binding: FragmentProfileBinding? = null
+    private val binding get() = _binding!!
+    private val authViewModel: AuthViewModel by activityViewModels()
 
     private val postsViewModel: PostsViewModel by viewModels()
 
     private lateinit var adapter: UserPostsAdapter
-
-    private var cameraLauncher: ActivityResultLauncher<Void?>? = null
-    private var galleryLauncher: ActivityResultLauncher<String>? = null
     private var isImageUpdated = false
 
-    @SuppressLint("SetTextI18n")
+    private val cameraLauncher = registerForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
+        bitmap?.let {
+            binding.ivProfileImage.setImageBitmap(it)
+            isImageUpdated = true
+        }
+    }
+
+    private val galleryLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let {
+            binding.ivProfileImage.setImageURI(it)
+            isImageUpdated = true
+        }
+    }
+
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _binding = FragmentProfileBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val ivProfileImage = view.findViewById<ImageView>(R.id.ivProfileImage)
-        val ivCameraOverlay = view.findViewById<ImageView>(R.id.ivCameraOverlay)
-        val vImageDimOverlay = view.findViewById<View>(R.id.vImageDimOverlay)
-        val tvUserName = view.findViewById<TextView>(R.id.tvUserName)
-        val tvMemberSince = view.findViewById<TextView>(R.id.tvMemberSince)
-        val tvEmail = view.findViewById<TextView>(R.id.tvEmail)
-        val tvReportsCount = view.findViewById<TextView>(R.id.tvReportsCount)
-        val tvReunionsCount = view.findViewById<TextView>(R.id.tvReunionsCount)
-        val tvListingsCount = view.findViewById<TextView>(R.id.tvListingsCount)
-        val rvUserPosts = view.findViewById<RecyclerView>(R.id.rvUserPosts)
+        authViewModel.refreshUserData()
 
-        val btnEditProfile = view.findViewById<MaterialButton>(R.id.btnEditProfile)
-        val btnCancelEdit = view.findViewById<MaterialButton>(R.id.btnCancelEdit)
-        val btnSaveProfile = view.findViewById<MaterialButton>(R.id.btnSaveProfile)
+        setupRecyclerView()
+        setupObservers()
+        setupListeners()
+    }
 
-        val tvPhone = view.findViewById<TextView>(R.id.tvPhone)
-
-        val llEditName = view.findViewById<View>(R.id.llEditName)
-        val tilPhone = view.findViewById<TextInputLayout>(R.id.tilPhone)
-
-        val etFirstName = view.findViewById<TextInputEditText>(R.id.etFirstName)
-        val etLastName = view.findViewById<TextInputEditText>(R.id.etLastName)
-        val etPhone = view.findViewById<TextInputEditText>(R.id.etPhone)
-
+    private fun setupRecyclerView() {
         adapter = UserPostsAdapter(
             posts = emptyList(),
             onItemClick = { post ->
                 if (!post.isResolved) {
-                    val dialog = PostDetailsDialog(post)
-                    dialog.show(parentFragmentManager, "PostDetailsDialog")
+                    PostDetailsDialog.newInstance(post.id).show(parentFragmentManager, "PostDetailsDialog")
                 }
             },
             onEditClick = { post ->
-                val dialog = NewReportDialog.Companion.newInstance(post)
-                dialog.show(parentFragmentManager, "EditReportDialog")
+                ReportFormDialog.newInstance(post.id).show(parentFragmentManager, "EditReportDialog")
             },
             onDeleteClick = { post ->
-                AlertDialog.Builder(requireContext())
-                    .setTitle(R.string.delete_post_title)
-                    .setMessage(R.string.delete_post_message)
-                    .setPositiveButton(R.string.delete) { _, _ ->
-                        postsViewModel.deletePost(post) { _, messageRes ->
-                            ToastHelper.showCustomToast(requireView(), getString(messageRes))
-                        }
-                    }
-                    .setNegativeButton(R.string.cancel, null)
-                    .show()
+                showDeleteConfirmation(post.id)
             },
             onResolveToggleClick = { post ->
                 val updatedPost = post.copy(isResolved = !post.isResolved)
-                postsViewModel.updatePost(updatedPost) { success, messageRes ->
+                postsViewModel.updatePost(updatedPost) { success ->
                     if (success) {
-                        val statusRes =
-                            if (updatedPost.isResolved) R.string.listing_marked_as_resolved_success else R.string.listing_marked_as_unresolved_success
-                        ToastHelper.showCustomToast(requireView(), getString(statusRes))
-                    } else {
-                        ToastHelper.showCustomToast(requireView(), getString(messageRes))
+                        Toast.makeText(requireContext(), "Status updated", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
         )
-        rvUserPosts.layoutManager = LinearLayoutManager(requireContext())
-        rvUserPosts.adapter = adapter
+        binding.rvUserPosts.layoutManager = LinearLayoutManager(requireContext())
+        binding.rvUserPosts.adapter = adapter
+    }
 
-        cameraLauncher = registerForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
-            bitmap?.let {
-                ivProfileImage.setImageBitmap(it)
-                isImageUpdated = true
-            }
-        }
-
-        galleryLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-            uri?.let {
-                ivProfileImage.setImageURI(uri)
-                isImageUpdated = true
-            }
-        }
-
+    @SuppressLint("SetTextI18n")
+    private fun setupObservers() {
         authViewModel.userData.observe(viewLifecycleOwner) { user ->
             user?.let {
-                tvUserName.text = "${it.firstName} ${it.lastName}"
-                tvEmail.text = it.email
-                tvPhone.text = it.phone
+                binding.tvUserName.text = "${it.firstName} ${it.lastName}"
+                binding.tvEmail.text = it.email
+                binding.tvPhone.text = it.phone
 
-                val calendar = Calendar.getInstance()
-                calendar.timeInMillis = it.createdAt
-                val year = calendar.get(Calendar.YEAR)
-                tvMemberSince.text = getString(R.string.community_member_since, year)
+                val joinYear = Calendar.getInstance().apply {
+                    timeInMillis = it.createdAt
+                }.get(Calendar.YEAR)
+                binding.tvMemberSince.text = getString(R.string.community_member_since, joinYear)
 
                 if (!it.avatarUrl.isNullOrEmpty() && !isImageUpdated) {
                     Picasso.get()
@@ -148,125 +114,118 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
                         .error(R.drawable.ic_person)
                         .fit()
                         .centerCrop()
-                        .into(ivProfileImage)
-                } else if (it.avatarUrl.isNullOrEmpty() && !isImageUpdated) {
-                    ivProfileImage.setImageResource(R.drawable.ic_person)
+                        .into(binding.ivProfileImage)
+                } else if (!isImageUpdated) {
+                    binding.ivProfileImage.setImageResource(R.drawable.ic_person)
                 }
 
-                postsViewModel.getMyPosts(it.id).observe(viewLifecycleOwner) { posts ->
-                    adapter.setPosts(posts)
-                    tvReportsCount.text = posts.size.toString()
-                    tvListingsCount.text = posts.size.toString()
-
-                    val reunions = posts.count { post -> post.isResolved }
-                    tvReunionsCount.text = reunions.toString()
+                postsViewModel.getMyPosts(it.id).observe(viewLifecycleOwner) { userPosts ->
+                    adapter.setPosts(userPosts)
+                    binding.tvReportsCount.text = userPosts.size.toString()
+                    binding.tvListingsCount.text = userPosts.size.toString()
+                    binding.tvReunionsCount.text = userPosts.count { p -> p.isResolved }.toString()
                 }
             }
-        }
-
-        btnEditProfile.setOnClickListener {
-            toggleEditMode(true,
-                btnEditProfile, btnCancelEdit, btnSaveProfile,
-                tvUserName, llEditName, tvPhone, tilPhone,
-                ivCameraOverlay, vImageDimOverlay)
-
-            val user = authViewModel.userData.value
-            etFirstName.setText(user?.firstName)
-            etLastName.setText(user?.lastName)
-            etPhone.setText(user?.phone)
-        }
-
-        btnCancelEdit.setOnClickListener {
-            toggleEditMode(false,
-                btnEditProfile, btnCancelEdit, btnSaveProfile,
-                tvUserName, llEditName, tvPhone, tilPhone,
-                ivCameraOverlay, vImageDimOverlay)
-            isImageUpdated = false
-            authViewModel.refreshUserData()
-        }
-
-        btnSaveProfile.setOnClickListener {
-            val firstName = etFirstName.text.toString().trim()
-            val lastName = etLastName.text.toString().trim()
-            val phone = etPhone.text.toString().trim()
-
-            btnSaveProfile.text = getString(R.string.saving)
-            btnSaveProfile.isEnabled = false
-
-            val imageBitmap: Bitmap? = if (isImageUpdated) {
-                (ivProfileImage.drawable as? BitmapDrawable)?.bitmap
-            } else {
-                null
-            }
-
-            authViewModel.updateProfile(firstName, lastName, phone, imageBitmap)
         }
 
         authViewModel.updateProfileSuccess.observe(viewLifecycleOwner) { success ->
             if (success) {
-                ToastHelper.showCustomToast(requireView(), getString(R.string.profile_updated_successfully))
-
-                btnSaveProfile.text = getString(R.string.save_changes)
-                btnSaveProfile.isEnabled = true
-
-                toggleEditMode(false,
-                    btnEditProfile, btnCancelEdit, btnSaveProfile,
-                    tvUserName, llEditName, tvPhone, tilPhone,
-                    ivCameraOverlay, vImageDimOverlay)
-
+                Toast.makeText(requireContext(), "Profile updated!", Toast.LENGTH_SHORT).show()
+                toggleEditMode(false)
                 isImageUpdated = false
                 authViewModel.clearUpdateProfileStatus()
             }
         }
 
-        authViewModel.errorMessage.observe(viewLifecycleOwner) { message ->
-            if (message != null) {
-                ToastHelper.showCustomToast(requireView(), message)
-
-                btnSaveProfile.text = getString(R.string.save_changes)
-                btnSaveProfile.isEnabled = true
-            }
+        authViewModel.errorMessage.observe(viewLifecycleOwner) { msg ->
+            msg?.let { Toast.makeText(requireContext(), it, Toast.LENGTH_SHORT).show() }
         }
 
-        val showImageOptions = {
-            val options = arrayOf(getString(R.string.take_photo), getString(R.string.choose_from_gallery), getString(
-                R.string.cancel))
-            val builder = AlertDialog.Builder(requireContext())
-            builder.setTitle(R.string.update_profile_picture_title)
-            builder.setItems(options) { dialog, which ->
-                when (which) {
-                    0 -> cameraLauncher?.launch(null)
-                    1 -> galleryLauncher?.launch("image/*")
-                    2 -> dialog.dismiss()
-                }
+        authViewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
+            binding.btnSaveProfile.apply {
+                isEnabled = !isLoading
+                text = if (isLoading) "Saving..." else "Save Changes"
             }
-            builder.show()
-        }
 
-        ivProfileImage.setOnClickListener {
-            if (btnSaveProfile.isVisible) {
-                showImageOptions()
-            }
+            binding.btnCancelEdit.isEnabled = !isLoading
         }
     }
 
-    private fun toggleEditMode(
-        isEdit: Boolean,
-        btnEdit: View, btnCancel: View, btnSave: View,
-        tvName: View, editName: View, tvPh: View, tilPh: View,
-        cameraOverlay: View, dimOverlay: View
-    ) {
-        btnEdit.visibility = if (isEdit) View.GONE else View.VISIBLE
-        btnCancel.visibility = if (isEdit) View.VISIBLE else View.GONE
-        btnSave.visibility = if (isEdit) View.VISIBLE else View.GONE
+    private fun setupListeners() {
+        binding.btnEditProfile.setOnClickListener {
+            val user = authViewModel.userData.value
+            binding.etFirstName.setText(user?.firstName)
+            binding.etLastName.setText(user?.lastName)
+            binding.etPhone.setText(user?.phone)
+            toggleEditMode(true)
+        }
 
-        tvName.visibility = if (isEdit) View.GONE else View.VISIBLE
-        editName.visibility = if (isEdit) View.GONE else View.VISIBLE
+        binding.btnCancelEdit.setOnClickListener {
+            toggleEditMode(false)
+            isImageUpdated = false
+            authViewModel.refreshUserData()
+        }
 
-        tvPh.visibility = if (isEdit) View.GONE else View.VISIBLE
-        tilPh.visibility = if (isEdit) View.VISIBLE else View.GONE
+        binding.btnSaveProfile.setOnClickListener {
+            val firstName = binding.etFirstName.text.toString().trim()
+            val lastName = binding.etLastName.text.toString().trim()
+            val phone = binding.etPhone.text.toString().trim()
 
-        cameraOverlay.visibility = if (isEdit) View.VISIBLE else View.GONE
-        dimOverlay.visibility = if (isEdit) View.VISIBLE else View.GONE
+            val imageBitmap: Bitmap? = if (isImageUpdated) {
+                (binding.ivProfileImage.drawable as? BitmapDrawable)?.bitmap
+            } else {
+                null
+            }
+            authViewModel.updateProfile(firstName, lastName, phone, imageBitmap)
+        }
+
+        binding.ivProfileImage.setOnClickListener {
+            if (binding.btnSaveProfile.isVisible) showImageSourceDialog()
+        }
+    }
+
+    private fun toggleEditMode(isEdit: Boolean) {
+        binding.btnEditProfile.isVisible = !isEdit
+        binding.btnCancelEdit.isVisible = isEdit
+        binding.btnSaveProfile.isVisible = isEdit
+        binding.tvUserName.isVisible = !isEdit
+        binding.llEditName.isVisible = isEdit
+        binding.tvPhone.isVisible = !isEdit
+        binding.tilPhone.isVisible = isEdit
+        binding.ivCameraOverlay.isVisible = isEdit
+        binding.vImageDimOverlay.isVisible = isEdit
+    }
+
+    private fun showImageSourceDialog() {
+        val options = arrayOf("Take Photo", "Gallery", "Cancel")
+        AlertDialog.Builder(requireContext())
+            .setTitle("Update Profile Picture")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> cameraLauncher.launch(null)
+                    1 -> galleryLauncher.launch("image/*")
+                }
+            }.show()
+    }
+
+    private fun showDeleteConfirmation(postId: String) {
+        val post = adapter.getPosts().find { it.id == postId } ?: return
+
+        AlertDialog.Builder(requireContext())
+            .setTitle("Delete Post")
+            .setMessage("Are you sure you want to delete this report?")
+            .setPositiveButton("Delete") { _, _ ->
+                postsViewModel.deletePost(post) { success, _ ->
+                    val msg = if (success) "Deleted" else "Delete failed"
+                    Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 }
