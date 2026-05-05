@@ -8,6 +8,7 @@ import com.example.petspotandroid.model.Post
 import com.example.petspotandroid.model.User
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
+import java.util.Date
 
 class FirebaseModel {
     private val db = FirebaseFirestore.getInstance()
@@ -67,7 +68,7 @@ class FirebaseModel {
     fun addPost(post: Post, callback: (Boolean, String?) -> Unit) {
         db.collection(POSTS)
             .document(post.id)
-            .set(post)
+            .set(post.toJson)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     callback(true, null)
@@ -78,23 +79,31 @@ class FirebaseModel {
     }
 
     fun getAllPosts(since: Long, completion: FirestorePostsCompletion) {
+        val timestamp = Timestamp(Date(since))
+
         db.collection(POSTS)
-            .whereGreaterThanOrEqualTo(Post.LAST_UPDATED_KEY, Timestamp(since / 1000, 0))
+            .whereGreaterThanOrEqualTo(Post.LAST_UPDATED_KEY, timestamp)
             .get()
-            .addOnCompleteListener { result ->
-                if (result.isSuccessful) {
-                    val posts = result.result.mapNotNull { document ->
-                        try {
-                            val data = document.data.toMutableMap()
-                            data[Post.ID_KEY] = document.id
-                            Post.fromJson(data)
-                        } catch (exception: Exception) {
-                            Log.e("FirebaseModel", "Error converting Firestore document to Post", exception)
-                            null
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    val result = task.result
+                    if (result != null) {
+                        val posts = result.mapNotNull { document ->
+                            try {
+                                val data = document.data.toMutableMap()
+                                data[Post.ID_KEY] = document.id
+                                Post.fromJson(data)
+                            } catch (exception: Exception) {
+                                Log.e("FirebaseModel", "Error converting document ${document.id} to Post", exception)
+                                null
+                            }
                         }
+                        completion(posts)
+                    } else {
+                        completion(emptyList())
                     }
-                    completion(posts)
                 } else {
+                    Log.e("FirebaseModel", "Failed to fetch posts from Firebase", task.exception)
                     completion(emptyList())
                 }
             }
@@ -103,7 +112,7 @@ class FirebaseModel {
     fun updatePost(post: Post, callback: (Boolean, String?) -> Unit) {
         db.collection(POSTS)
             .document(post.id)
-            .set(post)
+            .set(post.toJson)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     callback(true, null)
